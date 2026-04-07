@@ -1,5 +1,6 @@
 import { DB } from './data.js';
 import { Auth } from './auth.js';
+import { MsgDB } from './messaging.js';
 
 const user = await Auth.init();
 const params = new URLSearchParams(window.location.search);
@@ -84,13 +85,21 @@ if (!pet) {
           </div>` : `<p class="owner-name">Listed on Fur Nest</p>`}
           ${pet.status === 'available'
             ? (!isOwner && owner
-                ? `<div class="contact-actions"><a href="mailto:${owner.email}?subject=Interested in ${pet.name}&body=Hi, I saw ${pet.name} on Fur Nest and I'm interested!" class="btn-contact">Email about ${pet.name}</a></div>`
+                ? `<div class="contact-actions"><button class="btn-contact" id="messageOwnerBtn">💬 Message about ${pet.name}</button></div>`
                 : isOwner ? `<p class="own-listing-note">This is your listing</p>` : '')
             : `<p class="not-available">This pet is no longer available</p>`}
         </div>
         <a href="index.html" class="btn-back">← Back to all pets</a>
       </aside>
     </div>`;
+
+  document.getElementById('messageOwnerBtn')?.addEventListener('click', async () => {
+    if (!user) { window.location.href = 'login.html'; return; }
+    const btn = document.getElementById('messageOwnerBtn');
+    btn.disabled = true; btn.textContent = 'Opening…';
+    const convId = await MsgDB.getOrCreate(user.id, pet.ownerId);
+    window.location.href = `messages.html?id=${convId}`;
+  });
 
   document.getElementById('deleteBtn')?.addEventListener('click', async () => {
     if (!confirm('Delete this listing?')) return;
