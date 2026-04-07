@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div class="notif-page">
+  <div class="notif-header">
+    <h1 class="notif-title">Notifications</h1>
+    <button class="btn-mark-all" id="markAllBtn">Mark all as read</button>
+  </div>
+  <div id="notifList" class="notif-list">
+    <p class="pp-empty">Loading…</p>
+  </div>
+</div>
+
+<footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
+
+<script type="module">
+import { Auth } from './js/auth.js';
+import { NotifDB } from './js/notifications.js';
+
+const user = await Auth.init();
+if (!user) { window.location.href = 'login.html'; }
+
+const list = document.getElementById('notifList');
+
+async function loadNotifs() {
+  list.innerHTML = '<p class="pp-empty">Loading…</p>';
+  const notifs = await NotifDB.getAll(user.id);
+
+  if (!notifs.length) {
+    list.innerHTML = '<div class="notif-empty"><p>No notifications yet.</p><p class="text-muted small">When someone follows you or posts, you\'ll see it here.</p></div>';
+    return;
+  }
+
+  list.innerHTML = notifs.map(n => {
+    const date = n.createdAt?.toDate ? n.createdAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const icon = n.type === 'follow' ? '👤' : n.type === 'post' ? '📸' : n.type === 'like' ? '❤️' : '🔔';
+    return `
+    <a href="${n.link || '#'}" class="notif-item ${n.read ? '' : 'notif-unread'}" data-id="${n.id}">
+      <div class="notif-icon-wrap">
+        ${n.fromAvatar
+          ? `<img src="${n.fromAvatar}" class="notif-avatar" alt="${n.fromName}">`
+          : `<div class="notif-icon-placeholder">${icon}</div>`}
+        <span class="notif-type-icon">${icon}</span>
+      </div>
+      <div class="notif-content">
+        <p class="notif-text">${n.text}</p>
+        <span class="notif-date">${date}</span>
+      </div>
+      ${!n.read ? '<span class="notif-dot"></span>' : ''}
+    </a>`;
+  }).join('');
+
+  // Mark as read when clicked
+  list.querySelectorAll('.notif-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      await NotifDB.markRead(user.id, item.dataset.id);
+      item.classList.remove('notif-unread');
+      item.querySelector('.notif-dot')?.remove();
+    });
+  });
+}
+
+document.getElementById('markAllBtn').addEventListener('click', async () => {
+  await NotifDB.markAllRead(user.id);
+  loadNotifs();
+});
+
+loadNotifs();
+</script>
+</body>
+</html>

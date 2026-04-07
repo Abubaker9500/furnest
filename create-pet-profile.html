@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Pet Profile — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<header class="hero text-center text-white py-4">
+  <h1 class="fw-bold h2" id="pageTitle">Create Pet Profile</h1>
+  <p class="mb-0 hero-sub">Give your pet their own page</p>
+</header>
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9">
+      <div class="card shadow-sm p-4 rounded-4">
+
+        <form id="petProfileForm">
+
+          <!-- Avatar -->
+          <div class="text-center mb-4">
+            <div class="pet-avatar-upload-wrap">
+              <img id="avatarPreview" src="https://placehold.co/120x120?text=🐾" class="pet-profile-avatar-lg" alt="Pet photo">
+              <label class="pet-avatar-edit" title="Change photo">
+                <input type="file" id="avatarFile" accept="image/*" style="display:none">
+                📷
+              </label>
+            </div>
+            <p id="avatarStatus" class="upload-status mt-2" style="display:none"></p>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Pet name *</label>
+              <input type="text" id="petName" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Animal type</label>
+              <select id="petType" class="form-select">
+                <option value="dog">Dog 🐕</option>
+                <option value="cat">Cat 🐈</option>
+                <option value="bird">Bird 🦜</option>
+                <option value="rabbit">Rabbit 🐰</option>
+                <option value="fish">Fish 🐟</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Breed</label>
+              <input type="text" id="petBreed" class="form-control" placeholder="e.g. Golden Retriever">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Birthday</label>
+              <input type="date" id="petBirthday" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Gender</label>
+              <select id="petGender" class="form-select">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Visibility</label>
+              <select id="petVisibility" class="form-select">
+                <option value="public">Public — anyone can view</option>
+                <option value="private">Private — only me</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Bio</label>
+              <textarea id="petBio" class="form-control" rows="3" placeholder="Tell the world about your pet…"></textarea>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-100 mt-4 py-2" type="submit" id="submitBtn">Create profile</button>
+          <a href="profile.html" class="btn btn-link w-100 mt-1">Cancel</a>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
+
+<script type="module">
+import { Auth } from './js/auth.js';
+import { PetDB, uploadToCloudinary } from './js/petProfile.js';
+
+const user = await Auth.init();
+if (!user) { window.location.href = 'login.html'; }
+
+const params = new URLSearchParams(window.location.search);
+const editId = params.get('edit');
+let existing = null;
+
+if (editId) {
+  existing = await PetDB.getProfile(editId);
+  if (!existing || existing.ownerId !== user.id) {
+    window.location.href = 'profile.html';
+  } else {
+    document.getElementById('pageTitle').textContent = 'Edit Pet Profile';
+    document.getElementById('submitBtn').textContent = 'Save changes';
+    prefill(existing);
+  }
+}
+
+function prefill(p) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  s('petName', p.name); s('petType', p.type); s('petBreed', p.breed);
+  s('petBirthday', p.birthday); s('petGender', p.gender);
+  s('petBio', p.bio); s('petVisibility', p.visibility);
+  if (p.avatar) { document.getElementById('avatarPreview').src = p.avatar; }
+}
+
+// Avatar upload
+let avatarUrl = existing?.avatar || '';
+document.getElementById('avatarFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('avatarStatus');
+  status.textContent = 'Uploading…'; status.className = 'upload-status info'; status.style.display = '';
+  try {
+    avatarUrl = await uploadToCloudinary(file, pct => {
+      status.textContent = `Uploading… ${pct}%`;
+    });
+    document.getElementById('avatarPreview').src = avatarUrl;
+    status.textContent = 'Photo uploaded!'; status.className = 'upload-status success';
+  } catch {
+    status.textContent = 'Upload failed.'; status.className = 'upload-status error';
+  }
+});
+
+document.getElementById('petProfileForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const data = {
+    name:       document.getElementById('petName').value.trim(),
+    type:       document.getElementById('petType').value,
+    breed:      document.getElementById('petBreed').value.trim(),
+    birthday:   document.getElementById('petBirthday').value,
+    gender:     document.getElementById('petGender').value,
+    bio:        document.getElementById('petBio').value.trim(),
+    visibility: document.getElementById('petVisibility').value,
+    avatar:     avatarUrl,
+    ownerId:    user.id,
+    ownerName:  user.name
+  };
+
+  if (!data.name) { alert('Please enter a pet name.'); btn.disabled = false; btn.textContent = editId ? 'Save changes' : 'Create profile'; return; }
+
+  try {
+    if (editId) {
+      await PetDB.updateProfile(editId, data);
+      window.location.href = `pet-profile.html?id=${editId}`;
+    } else {
+      const pet = await PetDB.createProfile(data);
+      window.location.href = `pet-profile.html?id=${pet.id}`;
+    }
+  } catch(err) {
+    console.error('Full error:', err.code, err.message, err);
+    alert('Error: ' + err.message);
+    btn.disabled = false; btn.textContent = editId ? 'Save changes' : 'Create profile';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">🐾</div>
+    <h1 class="auth-title">Welcome to Fur Nest</h1>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login">Sign in</button>
+      <button class="auth-tab" id="tab-register">Create account</button>
+    </div>
+
+    <!-- Login panel -->
+    <div id="loginPanel">
+      <form id="loginForm">
+        <p id="loginError" class="auth-error" style="display:none"></p>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="loginEmail" class="form-control" required autocomplete="email">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" id="loginPassword" class="form-control" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2">Sign in</button>
+      </form>
+      <p class="auth-switch">No account? <a href="#register" onclick="showTab('register')">Create one free</a></p>
+    </div>
+
+    <!-- Register panel -->
+    <div id="registerPanel" style="display:none">
+      <form id="registerForm">
+        <p id="registerError" class="auth-error" style="display:none"></p>
+        <div class="mb-3">
+          <label class="form-label">Your name</label>
+          <input type="text" id="regName" class="form-control" required autocomplete="name">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" id="regEmail" class="form-control" required autocomplete="email">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" id="regPassword" class="form-control" required autocomplete="new-password" minlength="6">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirm password</label>
+          <input type="password" id="regPassword2" class="form-control" required autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="#login" onclick="showTab('login')">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>

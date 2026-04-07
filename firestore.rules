@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /pets/{petId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      // Own profile: full write access
+      allow write: if request.auth != null && request.auth.uid == userId;
+      // Other users: only allow updating followers array
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']);
+    }
+
+    match /users/{userId}/notifications/{notifId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+    }
+
+    match /petProfiles/{profileId} {
+      // Allow read for all — privacy filtering handled in app code
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth.uid == resource.data.ownerId;
+
+      match /memories/{memoryId} {
+        // Allow read for all — privacy filtering handled in app code
+        allow read: if true;
+        allow write: if request.auth.uid == get(/databases/$(database)/documents/petProfiles/$(profileId)).data.ownerId;
+      }
+    }
+
+  }
+}

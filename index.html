@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fur Nest — Feed</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link active">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div class="feed-layout">
+  <div class="feed-main">
+
+    <div id="createPostBox" class="create-post-box" style="display:none">
+      <div class="create-post-top">
+        <img id="createPostAvatar" src="" class="create-post-avatar" alt="">
+        <button class="create-post-trigger" id="openPostForm">What's your pet up to? 🐾</button>
+      </div>
+      <div id="postForm" style="display:none">
+        <textarea id="postText" class="post-textarea" placeholder="Share a moment with your pet…" rows="3"></textarea>
+        <div id="postPhotoPreviewWrap" style="display:none">
+          <img id="postPhotoPreview" src="" class="post-photo-preview" alt="">
+          <button class="remove-photo-btn" id="removePhoto">×</button>
+        </div>
+        <div class="post-form-actions">
+          <label class="btn-upload-small">📷 Add photo<input type="file" id="postPhotoFile" accept="image/*" style="display:none"></label>
+          <p id="postUploadStatus" class="upload-status" style="display:none"></p>
+          <button class="btn-post" id="submitPost">Post</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="feed-tabs" id="feedTabs" style="display:none">
+      <button class="feed-tab active" id="tabFollowing">Following</button>
+      <button class="feed-tab" id="tabDiscover">Discover</button>
+    </div>
+
+    <div id="feedContent">
+      <div class="feed-loading">Loading feed…</div>
+    </div>
+  </div>
+
+  <aside class="feed-sidebar">
+    <div class="sidebar-card">
+      <h3 class="sidebar-title">People to follow</h3>
+      <div id="suggestedUsers"><p class="pp-empty">Loading…</p></div>
+    </div>
+    <div class="sidebar-card">
+      <h3 class="sidebar-title">Quick links</h3>
+      <a href="marketplace.html" class="sidebar-link">🛍 Browse marketplace</a>
+      <a href="add-pet.html" class="sidebar-link">➕ List a pet</a>
+      <a href="create-pet-profile.html" class="sidebar-link">🐾 Create pet profile</a>
+    </div>
+  </aside>
+</div>
+
+<div id="lightbox" class="lightbox" style="display:none" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { Auth } from './js/auth.js';
+import { FeedDB, uploadPhoto } from './js/feed.js';
+import { db } from './js/firebase.js';
+import { getDocs, collection, limit, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const user = await Auth.init();
+let currentTab = 'following';
+let postPhotoUrl = '';
+
+if (user) {
+  document.getElementById('createPostBox').style.display = '';
+  document.getElementById('createPostAvatar').src = user.avatar;
+  document.getElementById('feedTabs').style.display = '';
+}
+
+document.getElementById('openPostForm')?.addEventListener('click', () => {
+  document.getElementById('postForm').style.display = '';
+  document.getElementById('openPostForm').style.display = 'none';
+  document.getElementById('postText').focus();
+});
+
+document.getElementById('postPhotoFile')?.addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const status = document.getElementById('postUploadStatus');
+  status.textContent = 'Uploading…'; status.className = 'upload-status info'; status.style.display = '';
+  try {
+    postPhotoUrl = await uploadPhoto(file, pct => { status.textContent = `Uploading… ${pct}%`; });
+    document.getElementById('postPhotoPreview').src = postPhotoUrl;
+    document.getElementById('postPhotoPreviewWrap').style.display = '';
+    status.style.display = 'none';
+  } catch { status.textContent = 'Upload failed.'; status.className = 'upload-status error'; }
+});
+
+document.getElementById('removePhoto')?.addEventListener('click', () => {
+  postPhotoUrl = '';
+  document.getElementById('postPhotoPreviewWrap').style.display = 'none';
+  document.getElementById('postPhotoFile').value = '';
+});
+
+document.getElementById('submitPost')?.addEventListener('click', async () => {
+  const text = document.getElementById('postText').value.trim();
+  if (!text && !postPhotoUrl) { alert('Write something or add a photo.'); return; }
+  const btn = document.getElementById('submitPost');
+  btn.disabled = true; btn.textContent = 'Posting…';
+  // Get current user's followers to notify them
+  const mySnap = await import('./js/firebase.js').then(m => m.db);
+  const userFollowers = user.followers || [];
+  await FeedDB.createPost({ text, photo: postPhotoUrl, ownerId: user.id, ownerName: user.name, ownerAvatar: user.avatar }, userFollowers);
+  btn.disabled = false; btn.textContent = 'Post';
+  document.getElementById('postText').value = '';
+  document.getElementById('postForm').style.display = 'none';
+  document.getElementById('openPostForm').style.display = '';
+  postPhotoUrl = '';
+  document.getElementById('postPhotoPreviewWrap').style.display = 'none';
+  loadFeed();
+});
+
+document.getElementById('tabFollowing')?.addEventListener('click', () => {
+  currentTab = 'following';
+  document.getElementById('tabFollowing').classList.add('active');
+  document.getElementById('tabDiscover').classList.remove('active');
+  loadFeed();
+});
+document.getElementById('tabDiscover')?.addEventListener('click', () => {
+  currentTab = 'discover';
+  document.getElementById('tabDiscover').classList.add('active');
+  document.getElementById('tabFollowing').classList.remove('active');
+  loadFeed();
+});
+
+async function loadFeed() {
+  const content = document.getElementById('feedContent');
+  content.innerHTML = '<div class="feed-loading">Loading…</div>';
+  let posts = [];
+  try {
+    if (user && currentTab === 'following') {
+      const following = await FeedDB.getFollowing(user.id);
+      const ids = [...following, user.id];
+      posts = await FeedDB.getFollowingFeed(ids);
+      if (!posts.length) {
+        content.innerHTML = `<div class="feed-empty"><p>Nothing here yet.</p><p class="text-muted small">Follow people or switch to Discover.</p></div>`;
+        return;
+      }
+    } else {
+      posts = await FeedDB.getDiscoveryFeed();
+      if (!posts.length) { content.innerHTML = '<div class="feed-empty"><p>No posts yet. Be the first!</p></div>'; return; }
+    }
+  } catch(e) { content.innerHTML = '<div class="feed-empty"><p>Could not load feed.</p></div>'; return; }
+  content.innerHTML = posts.map(post => renderPost(post)).join('');
+  attachListeners();
+}
+
+function renderPost(post) {
+  const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+  const liked = user && (post.likes||[]).includes(user.id);
+  const isOwn = user && user.id === post.ownerId;
+  return `
+  <div class="feed-post" data-id="${post.id}">
+    <div class="post-header">
+      <a href="profile.html?id=${post.ownerId}" class="post-owner-link">
+        <img src="${post.ownerAvatar||'https://placehold.co/40x40?text=🐾'}" class="post-avatar" alt="${post.ownerName}">
+        <div><span class="post-owner-name">${post.ownerName}</span><span class="post-date">${date}</span></div>
+      </a>
+      ${isOwn ? `<button class="post-delete-btn" data-id="${post.id}" title="Delete">×</button>` : ''}
+    </div>
+    ${post.text ? `<p class="post-text">${post.text}</p>` : ''}
+    ${post.photo ? `<img src="${post.photo}" class="post-photo" alt="Post" onclick="document.getElementById('lightbox').style.display='flex';document.getElementById('lightboxImg').src='${post.photo}'">` : ''}
+    <div class="post-actions">
+      <button class="post-like-btn ${liked?'liked':''}" data-id="${post.id}">
+        ${liked?'❤️':'🤍'} <span class="like-count">${post.likeCount||0}</span>
+      </button>
+    </div>
+  </div>`;
+}
+
+function attachListeners() {
+  document.querySelectorAll('.post-like-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!user) { window.location.href = 'login.html'; return; }
+      await FeedDB.toggleLike(btn.dataset.id, user.id, user.name, user.avatar);
+      loadFeed();
+    });
+  });
+  document.querySelectorAll('.post-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this post?')) return;
+      await FeedDB.deletePost(btn.dataset.id);
+      loadFeed();
+    });
+  });
+}
+
+async function loadSuggestions() {
+  const container = document.getElementById('suggestedUsers');
+  try {
+    const snap = await getDocs(query(collection(db, 'users'), limit(6)));
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.id !== user?.id);
+    if (!users.length) { container.innerHTML = '<p class="pp-empty">No users yet.</p>'; return; }
+    const following = user ? await FeedDB.getFollowing(user.id) : [];
+    container.innerHTML = users.map(u => `
+      <div class="suggested-user">
+        <a href="profile.html?id=${u.id}" class="suggested-user-info">
+          <img src="${u.avatar||'https://placehold.co/36x36?text=🐾'}" class="suggested-avatar" alt="${u.name}">
+          <span class="suggested-name">${u.name}</span>
+        </a>
+        ${user ? `<button class="btn-follow ${following.includes(u.id)?'following':''}" data-id="${u.id}">${following.includes(u.id)?'Following':'Follow'}</button>` : ''}
+      </div>`).join('');
+    container.querySelectorAll('.btn-follow').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const isF = btn.classList.contains('following');
+        btn.disabled = true;
+        try {
+          if (isF) {
+            await FeedDB.unfollowUser(user.id, btn.dataset.id);
+            btn.textContent = 'Follow';
+            btn.classList.remove('following');
+          } else {
+            await FeedDB.followUser(user.id, btn.dataset.id, user.name, user.avatar);
+            btn.textContent = 'Following';
+            btn.classList.add('following');
+          }
+        } catch(e) {
+          console.error('Follow/unfollow error:', e);
+          alert('Error: ' + e.message);
+        }
+        btn.disabled = false;
+        loadFeed();
+      });
+    });
+  } catch { container.innerHTML = '<p class="pp-empty">Could not load.</p>'; }
+}
+
+loadFeed();
+loadSuggestions();
+</script>
+</body>
+</html>

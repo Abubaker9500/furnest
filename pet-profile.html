@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Profile — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div id="petProfileRoot"></div>
+
+<footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
+
+<script type="module">
+import { Auth } from './js/auth.js';
+import { PetDB, uploadToCloudinary } from './js/petProfile.js';
+
+const user = await Auth.init();
+const params = new URLSearchParams(window.location.search);
+const petId = params.get('id');
+if (!petId) { window.location.href = 'index.html'; }
+
+const pet = await PetDB.getProfile(petId);
+if (!pet) { document.getElementById('petProfileRoot').innerHTML = '<p class="text-center py-5">Pet not found.</p>'; }
+else if (pet.visibility === 'private' && (!user || user.id !== pet.ownerId)) {
+  document.getElementById('petProfileRoot').innerHTML = '<p class="text-center py-5">This profile is private.</p>';
+} else {
+  const isOwner = user && user.id === pet.ownerId;
+  document.title = `${pet.name} — Fur Nest`;
+
+  const typeEmoji = { dog:'🐕', cat:'🐈', bird:'🦜', rabbit:'🐰', fish:'🐟', other:'🐾' };
+  const age = pet.birthday ? getAge(pet.birthday) : null;
+
+  function getAge(bday) {
+    const diff = Date.now() - new Date(bday).getTime();
+    const years = Math.floor(diff / (1000*60*60*24*365.25));
+    const months = Math.floor(diff / (1000*60*60*24*30.44));
+    return years >= 1 ? `${years} yr${years>1?'s':''}` : `${months} mo${months>1?'s':''}`;
+  }
+
+  const root = document.getElementById('petProfileRoot');
+  root.innerHTML = `
+    <div class="pet-profile-hero">
+      <div class="pet-profile-avatar-wrap">
+        <img src="${pet.avatar || 'https://placehold.co/120x120?text=🐾'}" class="pet-profile-avatar-lg" alt="${pet.name}">
+        ${pet.visibility === 'private' ? '<span class="privacy-badge">🔒 Private</span>' : ''}
+      </div>
+      <div class="pet-profile-info">
+        <h1 class="pet-profile-name">${pet.name} <span class="pet-type-emoji">${typeEmoji[pet.type]||'🐾'}</span></h1>
+        <p class="pet-profile-meta">
+          ${pet.breed ? pet.breed + ' · ' : ''}
+          ${pet.gender || ''}
+          ${age ? ' · ' + age + ' old' : ''}
+        </p>
+        ${pet.bio ? `<p class="pet-profile-bio">${pet.bio}</p>` : ''}
+      </div>
+      ${isOwner ? `
+      <div class="pet-profile-actions">
+        <a href="create-pet-profile.html?edit=${pet.id}" class="btn-edit">Edit profile</a>
+        <button class="btn-delete" id="deletePetBtn">Delete</button>
+      </div>` : ''}
+    </div>
+
+    <div class="pet-profile-body">
+
+      <!-- Gallery -->
+      <section class="pp-section">
+        <div class="pp-section-header">
+          <h2>Gallery</h2>
+          ${isOwner ? `<label class="btn-add-memory" title="Add photos">+ Add photos<input type="file" id="galleryUpload" accept="image/*" multiple style="display:none"></label>` : ''}
+        </div>
+        <div id="galleryGrid" class="pp-gallery-grid">
+          <p class="pp-empty" id="galleryEmpty">No photos yet.</p>
+        </div>
+      </section>
+
+      <!-- Memory Journal -->
+      <section class="pp-section">
+        <div class="pp-section-header">
+          <h2>Memory journal</h2>
+          ${isOwner ? `<button class="btn-add-memory" id="addMemoryBtn">+ Add memory</button>` : ''}
+        </div>
+
+        ${isOwner ? `
+        <div id="memoryForm" class="memory-form" style="display:none">
+          <textarea id="memoryText" class="form-control mb-2" rows="3" placeholder="Write a memory…"></textarea>
+          <div class="memory-form-actions">
+            <label class="btn-upload-small">📷 Add photo<input type="file" id="memoryPhoto" accept="image/*" style="display:none"></label>
+            <img id="memoryPhotoPreview" src="" style="display:none;width:60px;height:60px;object-fit:cover;border-radius:8px">
+            <button class="btn-save" id="saveMemoryBtn">Post</button>
+            <button class="btn-cancel" id="cancelMemoryBtn">Cancel</button>
+          </div>
+          <p id="memoryUploadStatus" class="upload-status mt-1" style="display:none"></p>
+        </div>` : ''}
+
+        <div id="memoriesList"></div>
+        <p class="pp-empty" id="memoriesEmpty" style="display:none">No memories yet.</p>
+      </section>
+
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" style="display:none" onclick="this.style.display='none'">
+      <img id="lightboxImg" src="" alt="">
+    </div>
+  `;
+
+  // Load gallery & memories
+  const memories = await PetDB.getMemories(petId);
+  renderGallery(memories);
+  renderMemories(memories, isOwner);
+
+  function renderGallery(mems) {
+    const photos = mems.filter(m => m.photo);
+    const grid = document.getElementById('galleryGrid');
+    const empty = document.getElementById('galleryEmpty');
+    if (photos.length === 0) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = photos.map(m => `
+      <div class="pp-gallery-item">
+        <img src="${m.photo}" alt="Memory" onclick="document.getElementById('lightbox').style.display='flex';document.getElementById('lightboxImg').src='${m.photo}'">
+        ${isOwner ? `<button class="gallery-delete" data-id="${m.id}" title="Delete">×</button>` : ''}
+      </div>`).join('');
+
+    if (isOwner) {
+      grid.querySelectorAll('.gallery-delete').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.stopPropagation();
+          if (!confirm('Delete this photo?')) return;
+          await PetDB.deleteMemory(petId, btn.dataset.id);
+          location.reload();
+        });
+      });
+    }
+  }
+
+  function renderMemories(mems, isOwner) {
+    const list = document.getElementById('memoriesList');
+    const empty = document.getElementById('memoriesEmpty');
+    const textMems = mems.filter(m => m.text);
+    if (textMems.length === 0) { empty.style.display = ''; return; }
+    empty.style.display = 'none';
+    list.innerHTML = textMems.map(m => {
+      const date = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      return `
+      <div class="memory-card">
+        ${m.photo ? `<img src="${m.photo}" class="memory-photo" onclick="document.getElementById('lightbox').style.display='flex';document.getElementById('lightboxImg').src='${m.photo}'" alt="Memory photo">` : ''}
+        <div class="memory-content">
+          <p class="memory-text">${m.text}</p>
+          <span class="memory-date">${date}</span>
+        </div>
+        ${isOwner ? `<button class="memory-delete" data-id="${m.id}" title="Delete">×</button>` : ''}
+      </div>`;
+    }).join('');
+
+    if (isOwner) {
+      list.querySelectorAll('.memory-delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Delete this memory?')) return;
+          await PetDB.deleteMemory(petId, btn.dataset.id);
+          location.reload();
+        });
+      });
+    }
+  }
+
+  // Owner actions
+  if (isOwner) {
+    // Delete pet profile
+    document.getElementById('deletePetBtn')?.addEventListener('click', async () => {
+      if (!confirm(`Delete ${pet.name}'s profile? This cannot be undone.`)) return;
+      await PetDB.deleteProfile(petId);
+      window.location.href = 'profile.html';
+    });
+
+    // Gallery upload
+    let memoryPhotoUrl = '';
+    document.getElementById('galleryUpload')?.addEventListener('change', async e => {
+      const files = [...e.target.files];
+      if (!files.length) return;
+      for (const file of files) {
+        const url = await uploadToCloudinary(file);
+        await PetDB.addMemory(petId, { photo: url, text: '' });
+      }
+      location.reload();
+    });
+
+    // Memory form
+    document.getElementById('addMemoryBtn')?.addEventListener('click', () => {
+      document.getElementById('memoryForm').style.display = '';
+      document.getElementById('addMemoryBtn').style.display = 'none';
+    });
+    document.getElementById('cancelMemoryBtn')?.addEventListener('click', () => {
+      document.getElementById('memoryForm').style.display = 'none';
+      document.getElementById('addMemoryBtn').style.display = '';
+    });
+
+    document.getElementById('memoryPhoto')?.addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const status = document.getElementById('memoryUploadStatus');
+      status.textContent = 'Uploading…'; status.className = 'upload-status info'; status.style.display = '';
+      memoryPhotoUrl = await uploadToCloudinary(file, pct => { status.textContent = `Uploading… ${pct}%`; });
+      document.getElementById('memoryPhotoPreview').src = memoryPhotoUrl;
+      document.getElementById('memoryPhotoPreview').style.display = '';
+      status.textContent = 'Photo ready!'; status.className = 'upload-status success';
+    });
+
+    document.getElementById('saveMemoryBtn')?.addEventListener('click', async () => {
+      const text = document.getElementById('memoryText').value.trim();
+      if (!text && !memoryPhotoUrl) { alert('Add some text or a photo.'); return; }
+      const btn = document.getElementById('saveMemoryBtn');
+      btn.disabled = true; btn.textContent = 'Posting…';
+      await PetDB.addMemory(petId, { text, photo: memoryPhotoUrl });
+      location.reload();
+    });
+  }
+}
+</script>
+</body>
+</html>
