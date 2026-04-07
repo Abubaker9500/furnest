@@ -1,4 +1,4 @@
-import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, doc, setDoc, getDoc } from './firebase.js';
+import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, doc, setDoc, getDoc } from './firebase.js';
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const Auth = {
@@ -55,6 +55,15 @@ const Auth = {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will fire and set currentUser
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: this._friendlyError(e.code) };
+    }
+  },
+
+  async resetPassword(email) {
+    try {
+      await sendPasswordResetEmail(auth, email);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: this._friendlyError(e.code) };

@@ -45,11 +45,43 @@ document.getElementById('registerForm').addEventListener('submit', async e => {
   }
 });
 
+document.getElementById('forgotPasswordLink')?.addEventListener('click', e => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  if (email) document.getElementById('resetEmail').value = email;
+  showTab('reset');
+});
+
+document.getElementById('backToLoginLink')?.addEventListener('click', e => {
+  e.preventDefault();
+  showTab('login');
+});
+
+document.getElementById('sendResetBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('resetEmail').value.trim();
+  const errorEl = document.getElementById('resetError');
+  const msgEl = document.getElementById('resetMessage');
+  if (!email) { showError('resetError', 'Please enter your email address.'); return; }
+  const btn = document.getElementById('sendResetBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const result = await Auth.resetPassword(email);
+  if (result.ok) {
+    errorEl.style.display = 'none';
+    msgEl.textContent = 'Reset link sent! Check your inbox (and spam folder).';
+    msgEl.style.display = '';
+    btn.textContent = 'Sent ✓';
+  } else {
+    showError('resetError', result.error);
+    btn.disabled = false; btn.textContent = 'Send reset link';
+  }
+});
+
 function showTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('loginPanel').style.display    = tab === 'login'    ? '' : 'none';
   document.getElementById('registerPanel').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('resetPanel').style.display    = tab === 'reset'    ? '' : 'none';
 }
 function showError(id, msg) {
   const el = document.getElementById(id);
