@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div class="messages-layout">
+  <div class="messages-sidebar" id="messagesSidebar">
+    <div class="messages-sidebar-header">
+      <h2>Messages</h2>
+    </div>
+    <div id="convList" class="conv-list">
+      <p class="conv-empty">Loading…</p>
+    </div>
+  </div>
+
+  <div class="messages-main" id="messagesMain">
+    <div id="noConvSelected" class="no-conv-selected">
+      <p>💬</p>
+      <p>Select a conversation</p>
+    </div>
+    <div id="convView" class="conv-view" style="display:none">
+      <div class="conv-header" id="convHeader"></div>
+      <div class="conv-messages" id="convMessages"></div>
+      <div class="conv-input-bar">
+        <textarea id="msgInput" class="msg-input" placeholder="Type a message…" rows="1"></textarea>
+        <button class="btn-send" id="sendMsgBtn">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+import { Auth } from './js/auth.js';
+import { MsgDB } from './js/messaging.js';
+import { DB } from './js/data.js';
+import { db } from './js/firebase.js';
+import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const user = await Auth.init();
+if (!user) { window.location.href = 'login.html'; }
+
+const params = new URLSearchParams(window.location.search);
+let activeConvId = params.get('id');
+let allConvs = [];
+let activeConv = null;
+let messageUnsubscribe = null;
+
+async function loadConversations() {
+  const list = document.getElementById('convList');
+  allConvs = await MsgDB.getMyConversations(user.id);
+
+  if (!allConvs.length) {
+    list.innerHTML = '<p class="conv-empty">No conversations yet.<br>Message a pet owner to get started.</p>';
+    return;
+  }
+
+  // Fetch other user info for each conversation
+  allConvs = await Promise.all(allConvs.map(async conv => {
+    const otherId = conv.participants.find(id => id !== user.id);
+    const otherUser = await DB.getUserById(otherId);
+    return { ...conv, otherUser, otherId };
+  }));
+
+  renderConvList();
+}
+
+function renderConvList() {
+  const list = document.getElementById('convList');
+  list.innerHTML = allConvs.map(conv => {
+    const unread = conv.unread?.[user.id] || 0;
+    const isActive = conv.id === activeConvId;
+    const time = conv.lastMessageAt?.toDate
+      ? conv.lastMessageAt.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : '';
+    return `
+      <div class="conv-item ${isActive ? 'active' : ''}" data-id="${conv.id}">
+        <img src="${conv.otherUser?.avatar || 'https://placehold.co/44x44?text=🐾'}" class="conv-avatar" alt="">
+        <div class="conv-item-body">
+          <div class="conv-item-top">
+            <span class="conv-item-name">${escapeHtml(conv.otherUser?.name || 'Unknown')}</span>
+            <span class="conv-item-time">${time}</span>
+          </div>
+          <span class="conv-item-preview ${unread > 0 ? 'conv-item-preview--unread' : ''}">${escapeHtml(conv.lastMessage || 'No messages yet')}</span>
+        </div>
+        ${unread > 0 ? `<span class="conv-unread-dot">${unread > 9 ? '9+' : unread}</span>` : ''}
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.conv-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const conv = allConvs.find(c => c.id === el.dataset.id);
+      openConversation(el.dataset.id, conv);
+    });
+  });
+}
+
+async function openConversation(convId, conv) {
+  activeConvId = convId;
+  activeConv = conv;
+  history.replaceState({}, '', `messages.html?id=${convId}`);
+
+  // Update active state in list
+  document.querySelectorAll('.conv-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === convId);
+  });
+
+  // Clear unread dot and count in local state
+  const convIndex = allConvs.findIndex(c => c.id === convId);
+  if (convIndex !== -1) allConvs[convIndex].unread = { ...allConvs[convIndex].unread, [user.id]: 0 };
+  const dot = document.querySelector(`.conv-item[data-id="${convId}"] .conv-unread-dot`);
+  if (dot) dot.remove();
+  const preview = document.querySelector(`.conv-item[data-id="${convId}"] .conv-item-preview`);
+  if (preview) preview.classList.remove('conv-item-preview--unread');
+  await MsgDB.markRead(convId, user.id);
+
+  // Build header
+  const otherId = conv.otherId || conv.participants.find(id => id !== user.id);
+  const otherUser = conv.otherUser || await DB.getUserById(otherId);
+  document.getElementById('convHeader').innerHTML = `
+    <button class="conv-back-btn" id="convBackBtn">←</button>
+    <img src="${otherUser?.avatar || 'https://placehold.co/36x36?text=🐾'}" class="conv-header-avatar" alt="">
+    <a href="profile.html?id=${otherId}" class="conv-header-name">${escapeHtml(otherUser?.name || 'Unknown')}</a>
+  `;
+  document.getElementById('convBackBtn').addEventListener('click', () => {
+    document.getElementById('messagesSidebar').classList.remove('msgs-sidebar-hidden');
+    document.getElementById('messagesMain').classList.remove('msgs-main-shown');
+  });
+
+  // Show conversation view
+  document.getElementById('noConvSelected').style.display = 'none';
+  document.getElementById('convView').style.display = 'flex';
+
+  // Mobile: swap panels
+  document.getElementById('messagesSidebar').classList.add('msgs-sidebar-hidden');
+  document.getElementById('messagesMain').classList.add('msgs-main-shown');
+
+  // Subscribe to real-time messages
+  subscribeToMessages(convId, conv.participants);
+
+  document.getElementById('msgInput').focus();
+}
+
+function subscribeToMessages(convId, participants) {
+  if (messageUnsubscribe) messageUnsubscribe();
+  const q = query(
+    collection(db, 'conversations', convId, 'messages'),
+    orderBy('createdAt', 'asc'),
+    limit(100)
+  );
+  messageUnsubscribe = onSnapshot(q, snap => {
+    const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMessages(messages);
+  });
+}
+
+function renderMessages(messages) {
+  const container = document.getElementById('convMessages');
+  const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 60;
+
+  if (!messages.length) {
+    container.innerHTML = '<p class="msgs-empty">No messages yet. Say hello! 👋</p>';
+    return;
+  }
+
+  container.innerHTML = messages.map(msg => {
+    const isMine = msg.senderId === user.id;
+    const time = msg.createdAt?.toDate
+      ? msg.createdAt.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    return `
+      <div class="msg-bubble-wrap ${isMine ? 'mine' : 'theirs'}">
+        <div class="msg-bubble">${escapeHtml(msg.text)}</div>
+        ${time ? `<span class="msg-time">${time}</span>` : ''}
+      </div>`;
+  }).join('');
+
+  if (wasAtBottom) container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage() {
+  if (!activeConvId || !activeConv) return;
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('sendMsgBtn');
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = '';
+
+  const participants = activeConv.participants;
+  try {
+    await MsgDB.sendMessage(activeConvId, user.id, text, participants);
+    // Update preview in sidebar
+    const previewEl = document.querySelector(`.conv-item[data-id="${activeConvId}"] .conv-item-preview`);
+    if (previewEl) previewEl.textContent = text;
+  } catch(e) {
+    console.error('Send failed:', e);
+    input.value = text;
+  }
+  btn.disabled = false;
+  input.focus();
+}
+
+document.getElementById('sendMsgBtn').addEventListener('click', sendMessage);
+document.getElementById('msgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+// Auto-resize textarea
+document.getElementById('msgInput').addEventListener('input', function() {
+  this.style.height = '';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Load conversations and auto-open if ?id= is set
+await loadConversations();
+if (activeConvId) {
+  const conv = allConvs.find(c => c.id === activeConvId);
+  if (conv) {
+    openConversation(activeConvId, conv);
+  } else {
+    // Conversation not found in list — might be new, try to load it
+    window.location.href = 'messages.html';
+  }
+}
+</script>
+</body>
+</html>

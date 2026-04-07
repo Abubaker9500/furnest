@@ -1,5 +1,6 @@
 import { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, doc, setDoc, getDoc } from './firebase.js';
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { MsgDB } from './messaging.js';
 
 const Auth = {
   currentUser: null,
@@ -92,15 +93,25 @@ const Auth = {
     const navRight = document.getElementById('nav-auth');
     if (!navRight) return;
     if (this.currentUser) {
-      // Get unread notification count
+      // Get unread notification + message counts
       let unread = 0;
+      let msgUnread = 0;
       try {
         const q = query(collection(db, 'users', this.currentUser.id, 'notifications'), where('read', '==', false));
         const snap = await getDocs(q);
         unread = snap.size;
       } catch(e) {}
+      try {
+        msgUnread = await MsgDB.getTotalUnread(this.currentUser.id);
+      } catch(e) {}
 
       navRight.innerHTML = `
+        <a href="messages.html" class="nav-bell" title="Messages">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          ${msgUnread > 0 ? `<span class="nav-bell-badge">${msgUnread > 9 ? '9+' : msgUnread}</span>` : ''}
+        </a>
         <a href="notifications.html" class="nav-bell" title="Notifications">
           <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="nav-paw-icon">
             <defs>
