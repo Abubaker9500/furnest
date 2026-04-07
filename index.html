@@ -77,6 +77,15 @@ import { FeedDB, uploadPhoto } from './js/feed.js';
 import { db } from './js/firebase.js';
 import { getDocs, collection, limit, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const user = await Auth.init();
 let currentTab = 'following';
 let postPhotoUrl = '';
@@ -116,17 +125,28 @@ document.getElementById('submitPost')?.addEventListener('click', async () => {
   if (!text && !postPhotoUrl) { alert('Write something or add a photo.'); return; }
   const btn = document.getElementById('submitPost');
   btn.disabled = true; btn.textContent = 'Posting…';
-  // Get current user's followers to notify them
-  const mySnap = await import('./js/firebase.js').then(m => m.db);
-  const userFollowers = user.followers || [];
-  await FeedDB.createPost({ text, photo: postPhotoUrl, ownerId: user.id, ownerName: user.name, ownerAvatar: user.avatar }, userFollowers);
+  try {
+    const userFollowers = user.followers || [];
+    const newPost = await FeedDB.createPost({ text, photo: postPhotoUrl, ownerId: user.id, ownerName: user.name, ownerAvatar: user.avatar }, userFollowers);
+    // Prepend new post without reloading the whole feed
+    const displayPost = { ...newPost, createdAt: { toDate: () => new Date() } };
+    const content = document.getElementById('feedContent');
+    if (content.querySelector('.feed-loading, .feed-empty')) {
+      content.innerHTML = renderPost(displayPost);
+    } else {
+      content.insertAdjacentHTML('afterbegin', renderPost(displayPost));
+    }
+    attachListeners();
+  } catch(e) {
+    console.error('Post failed:', e);
+    alert('Could not publish post. Please try again.');
+  }
   btn.disabled = false; btn.textContent = 'Post';
   document.getElementById('postText').value = '';
   document.getElementById('postForm').style.display = 'none';
   document.getElementById('openPostForm').style.display = '';
   postPhotoUrl = '';
   document.getElementById('postPhotoPreviewWrap').style.display = 'none';
-  loadFeed();
 });
 
 document.getElementById('tabFollowing')?.addEventListener('click', () => {
@@ -168,17 +188,21 @@ function renderPost(post) {
   const date = post.createdAt?.toDate ? post.createdAt.toDate().toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
   const liked = user && (post.likes||[]).includes(user.id);
   const isOwn = user && user.id === post.ownerId;
+  const safeText = escapeHtml(post.text);
+  const safeOwnerName = escapeHtml(post.ownerName);
+  const safePhoto = (post.photo || '').startsWith('https://') ? post.photo : '';
+  const safeAvatar = (post.ownerAvatar || '').startsWith('http') ? post.ownerAvatar : 'https://placehold.co/40x40?text=🐾';
   return `
   <div class="feed-post" data-id="${post.id}">
     <div class="post-header">
       <a href="profile.html?id=${post.ownerId}" class="post-owner-link">
-        <img src="${post.ownerAvatar||'https://placehold.co/40x40?text=🐾'}" class="post-avatar" alt="${post.ownerName}">
-        <div><span class="post-owner-name">${post.ownerName}</span><span class="post-date">${date}</span></div>
+        <img src="${safeAvatar}" class="post-avatar" alt="${safeOwnerName}">
+        <div><span class="post-owner-name">${safeOwnerName}</span><span class="post-date">${date}</span></div>
       </a>
       ${isOwn ? `<button class="post-delete-btn" data-id="${post.id}" title="Delete">×</button>` : ''}
     </div>
-    ${post.text ? `<p class="post-text">${post.text}</p>` : ''}
-    ${post.photo ? `<img src="${post.photo}" class="post-photo" alt="Post" onclick="document.getElementById('lightbox').style.display='flex';document.getElementById('lightboxImg').src='${post.photo}'">` : ''}
+    ${safeText ? `<p class="post-text">${safeText}</p>` : ''}
+    ${safePhoto ? `<img src="${safePhoto}" class="post-photo" alt="Post" data-photo="${safePhoto}">` : ''}
     <div class="post-actions">
       <button class="post-like-btn ${liked?'liked':''}" data-id="${post.id}">
         ${liked?'❤️':'🤍'} <span class="like-count">${post.likeCount||0}</span>
@@ -191,15 +215,46 @@ function attachListeners() {
   document.querySelectorAll('.post-like-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!user) { window.location.href = 'login.html'; return; }
-      await FeedDB.toggleLike(btn.dataset.id, user.id, user.name, user.avatar);
-      loadFeed();
+      const wasLiked = btn.classList.contains('liked');
+      const countEl = btn.querySelector('.like-count');
+      const prevCount = parseInt(countEl.textContent) || 0;
+      const newCount = wasLiked ? prevCount - 1 : prevCount + 1;
+      // Optimistic update
+      btn.classList.toggle('liked', !wasLiked);
+      btn.childNodes[0].nodeValue = !wasLiked ? '❤️ ' : '🤍 ';
+      countEl.textContent = newCount;
+      btn.disabled = true;
+      try {
+        await FeedDB.toggleLike(btn.dataset.id, user.id, user.name, user.avatar);
+      } catch {
+        // Revert on failure
+        btn.classList.toggle('liked', wasLiked);
+        btn.childNodes[0].nodeValue = wasLiked ? '❤️ ' : '🤍 ';
+        countEl.textContent = prevCount;
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
   document.querySelectorAll('.post-delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this post?')) return;
-      await FeedDB.deletePost(btn.dataset.id);
-      loadFeed();
+      const postEl = btn.closest('.feed-post');
+      postEl.style.opacity = '0.5';
+      postEl.style.pointerEvents = 'none';
+      try {
+        await FeedDB.deletePost(btn.dataset.id);
+        postEl.remove();
+      } catch {
+        postEl.style.opacity = '';
+        postEl.style.pointerEvents = '';
+      }
+    });
+  });
+  document.querySelectorAll('.post-photo[data-photo]').forEach(img => {
+    img.addEventListener('click', () => {
+      document.getElementById('lightbox').style.display = 'flex';
+      document.getElementById('lightboxImg').src = img.dataset.photo;
     });
   });
 }
@@ -235,10 +290,8 @@ async function loadSuggestions() {
           }
         } catch(e) {
           console.error('Follow/unfollow error:', e);
-          alert('Error: ' + e.message);
         }
         btn.disabled = false;
-        loadFeed();
       });
     });
   } catch { container.innerHTML = '<p class="pp-empty">Could not load.</p>'; }
