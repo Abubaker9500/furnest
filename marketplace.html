@@ -13,80 +13,81 @@
   <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
   <div class="fn-nav-links">
     <a href="index.html" class="fn-nav-link">Feed</a>
-    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+    <a href="marketplace.html" class="fn-nav-link active">Marketplace</a>
   </div>
   <div id="nav-auth" class="nav-auth"></div>
 </nav>
 
-<div class="modal fade" id="petModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title" id="modalName"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-4">
-          <div class="col-md-5">
-            <img id="modalImage" class="img-fluid rounded-3 w-100" style="height:320px;object-fit:cover" alt="">
-          </div>
-          <div class="col-md-7">
-            <h4 id="modalBreed" class="text-muted fw-normal mb-1"></h4>
-            <p id="modalLocation" class="mb-3 text-muted small"></p>
-            <div class="row g-2 my-2">
-              <div class="col-4"><div class="modal-stat"><small>Age</small><strong id="modalAge"></strong></div></div>
-              <div class="col-4"><div class="modal-stat"><small>Gender</small><strong id="modalGender"></strong></div></div>
-              <div class="col-4"><div class="modal-stat"><small>Type</small><strong id="modalType"></strong></div></div>
-            </div>
-            <span id="modalPrice" class="modal-price"></span>
-            <h6 class="mt-3 mb-2">Health &amp; traits</h6>
-            <ul id="modalHealth" class="modal-health-list"></ul>
-            <button id="modalContactBtn" class="btn btn-primary mt-3 w-100">View Full Details</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <header class="hero text-center text-white py-5">
-  <h1 class="fw-bold display-5">Pet Marketplace</h1>
-  <p class="hero-sub">Adopt, buy, or give a loving pet a new home</p>
+  <h1 class="fw-bold display-5">Marketplace</h1>
+  <p class="hero-sub">Pets, food, supplies, clothes and more</p>
   <div class="container mt-4">
     <div class="row justify-content-center">
       <div class="col-md-8 col-lg-6">
         <input id="searchBar" type="text" class="form-control form-control-lg rounded-pill hero-search"
-               placeholder="Search by name, breed, or location…">
+               placeholder="Search listings…">
       </div>
     </div>
-    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap">
+
+    <!-- Main tabs -->
+    <div class="market-tabs mt-4">
+      <button class="market-tab active" id="tabPets" data-tab="pets">🐾 Pets</button>
+      <button class="market-tab" id="tabItems" data-tab="items">🛍 Items</button>
+    </div>
+
+    <!-- Pet filters (shown when Pets tab active) -->
+    <div id="petFilters" class="mt-3 d-flex justify-content-center gap-2 flex-wrap">
       <button class="filter-btn active" data-type="all">All pets</button>
       <button class="filter-btn" data-type="dog">Dogs 🐕</button>
       <button class="filter-btn" data-type="cat">Cats 🐈</button>
+      <button class="filter-btn" data-type="bird">Birds 🦜</button>
+      <button class="filter-btn" data-type="rabbit">Rabbits 🐇</button>
+      <button class="filter-btn" data-type="other">Other</button>
     </div>
-    <div class="mt-3">
-      <a href="add-pet.html" class="add-pet-btn">+ List a pet</a>
+
+    <!-- Item filters (shown when Items tab active) -->
+    <div id="itemFilters" class="mt-3 d-flex justify-content-center gap-2 flex-wrap" style="display:none !important">
+      <button class="filter-btn active" data-cat="all">All items</button>
+      <button class="filter-btn" data-cat="food">🍖 Food</button>
+      <button class="filter-btn" data-cat="care">🧴 Care</button>
+      <button class="filter-btn" data-cat="clothes">👕 Clothes</button>
+      <button class="filter-btn" data-cat="accessories">🎀 Accessories</button>
+      <button class="filter-btn" data-cat="toys">🎾 Toys</button>
+      <button class="filter-btn" data-cat="other">📦 Other</button>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-center gap-2">
+      <a href="add-pet.html" id="addPetBtn" class="add-pet-btn">+ List a pet</a>
+      <a href="add-item.html" id="addItemBtn" class="add-pet-btn" style="display:none">+ List an item</a>
     </div>
   </div>
 </header>
 
 <div class="container my-5">
-  <div id="petsLoading" class="row g-4">
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
-    <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+  <!-- Pets grid -->
+  <div id="petsSection">
+    <div id="petsLoading" class="row g-4">
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+    </div>
+    <div id="petList" class="row g-4"></div>
   </div>
-  <div id="petList" class="row g-4"></div>
+
+  <!-- Items grid -->
+  <div id="itemsSection" style="display:none">
+    <div id="itemsLoading" class="row g-4">
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+      <div class="col-sm-6 col-lg-4"><div class="skeleton-pet-card"><span class="skeleton sk-pet-img"></span><div class="sk-pet-body"><span class="skeleton sk-line sk-w60"></span><span class="skeleton sk-line sk-w40"></span><span class="skeleton sk-line sk-w75"></span></div></div></div>
+    </div>
+    <div id="itemList" class="row g-4"></div>
+  </div>
 </div>
 
 <footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List an Item — Fur Nest</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+
+<nav class="fn-nav">
+  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
+  <div class="fn-nav-links">
+    <a href="index.html" class="fn-nav-link">Feed</a>
+    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
+  </div>
+  <div id="nav-auth" class="nav-auth"></div>
+</nav>
+
+<div class="container py-5" style="max-width: 680px">
+  <h1 class="form-title mb-1">List an Item</h1>
+  <p class="text-muted mb-4">Sell or give away pet food, supplies, clothes and more.</p>
+
+  <form id="itemForm" novalidate>
+
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title">Item details</h5>
+
+      <div class="mb-3">
+        <label class="form-label">Title <span class="text-danger">*</span></label>
+        <input type="text" id="title" class="form-control" placeholder="e.g. Royal Canin dry food 2kg">
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Category</label>
+          <select id="category" class="form-select">
+            <option value="food">🍖 Food & Treats</option>
+            <option value="care">🧴 Grooming & Care</option>
+            <option value="clothes">👕 Clothes & Costumes</option>
+            <option value="accessories">🎀 Accessories</option>
+            <option value="toys">🎾 Toys</option>
+            <option value="other">📦 Other</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Condition</label>
+          <select id="condition" class="form-select">
+            <option value="new">New</option>
+            <option value="like-new">Like New</option>
+            <option value="used">Used</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea id="description" class="form-control" rows="3" placeholder="Describe the item — size, quantity, brand, any relevant details…"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Location</label>
+        <input type="text" id="location" class="form-control" placeholder="City, State">
+      </div>
+    </div>
+
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title">Listing type</h5>
+      <div class="listing-type-group mb-3">
+        <label class="listing-type-option">
+          <input type="radio" name="listingTypeR" value="sell" checked>
+          <span>For Sale 💰</span>
+        </label>
+        <label class="listing-type-option">
+          <input type="radio" name="listingTypeR" value="free">
+          <span>Free 🎁</span>
+        </label>
+      </div>
+      <input type="hidden" id="listingType" value="sell">
+      <div id="priceWrap" class="mb-3">
+        <label class="form-label">Price ($)</label>
+        <input type="number" id="price" class="form-control" min="0" step="0.01" placeholder="0.00" style="max-width:180px">
+      </div>
+    </div>
+
+    <div class="fn-card mb-4">
+      <h5 class="fn-card-title">Photo</h5>
+      <div class="upload-tabs mb-3">
+        <button type="button" class="upload-tab active" id="tabFile">Upload file</button>
+        <button type="button" class="upload-tab" id="tabUrl">Paste URL</button>
+      </div>
+
+      <div id="fileUploadPanel">
+        <label class="upload-area" id="uploadArea">
+          <input type="file" id="imageFile" accept="image/jpeg,image/png,image/webp" style="display:none">
+          <span class="upload-icon">📷</span>
+          <span class="upload-label">Click to upload</span>
+          <span class="upload-hint">JPG, PNG or WEBP · max 5 MB</span>
+        </label>
+        <p id="uploadStatus" class="upload-status" style="display:none"></p>
+      </div>
+
+      <div id="urlPanel" style="display:none">
+        <input type="url" id="imageUrl" class="form-control mb-2" placeholder="https://example.com/photo.jpg">
+        <button type="button" id="previewUrlBtn" class="btn btn-outline-secondary btn-sm">Preview</button>
+      </div>
+
+      <div id="imagePreviewWrap" style="display:none; margin-top:12px">
+        <img id="imagePreview" src="" alt="Preview" style="max-height:220px; border-radius:10px; object-fit:cover; max-width:100%">
+        <button type="button" class="remove-photo-btn" id="removeImage">×</button>
+      </div>
+    </div>
+
+    <div class="d-flex gap-3">
+      <button type="submit" class="btn-post" id="submitBtn">Publish listing</button>
+      <a href="marketplace.html" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<footer class="fn-footer">🐾 Fur Nest &copy; 2025</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="js/addItem.js"></script>
+</body>
+</html>

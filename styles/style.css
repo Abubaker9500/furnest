@@ -92,6 +92,16 @@ body {
 }
 .hero-search:focus { outline: none; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
 
+/* ---- MARKET TABS ---- */
+.market-tabs { display: flex; justify-content: center; gap: 8px; }
+.market-tab {
+  background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4);
+  color: #fff; padding: 9px 28px; border-radius: 999px; font-weight: 700;
+  font-size: 0.95rem; cursor: pointer; font-family: inherit; transition: all .2s;
+}
+.market-tab:hover { background: rgba(255,255,255,0.28); }
+.market-tab.active { background: #fff; color: var(--purple); border-color: #fff; }
+
 /* ---- FILTER BUTTONS ---- */
 .filter-btn {
   background: rgba(255,255,255,0.18);
@@ -146,6 +156,7 @@ body {
 .pet-type-icon { font-size: 1.1rem; }
 .pet-breed { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
 .pet-card-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); }
+.item-condition { font-size: 0.78rem; color: var(--text-muted); }
 
 /* ---- BADGES ---- */
 .listing-badge {
