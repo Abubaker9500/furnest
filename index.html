@@ -162,9 +162,25 @@ document.getElementById('tabDiscover')?.addEventListener('click', () => {
   loadFeed();
 });
 
+function skeletonPost() {
+  return `
+  <div class="skeleton-post">
+    <div class="skeleton-post-header">
+      <span class="skeleton sk-avatar"></span>
+      <div class="sk-post-meta">
+        <span class="skeleton sk-name"></span>
+        <span class="skeleton sk-date"></span>
+      </div>
+    </div>
+    <span class="skeleton sk-line sk-w90"></span>
+    <span class="skeleton sk-line sk-w75"></span>
+    <span class="skeleton sk-photo"></span>
+  </div>`;
+}
+
 async function loadFeed() {
   const content = document.getElementById('feedContent');
-  content.innerHTML = '<div class="feed-loading">Loading…</div>';
+  content.innerHTML = skeletonPost() + skeletonPost() + skeletonPost();
   let posts = [];
   try {
     if (user && currentTab === 'following') {
