@@ -13,7 +13,7 @@ if (!petId) { window.location.href = 'index.html'; }
 
 const pet = await DB.getPetById(petId);
 if (!pet) {
-  document.getElementById('detailsRoot').innerHTML = '<p class="text-center py-5">Pet not found. <a href="index.html">Go back</a></p>';
+  document.getElementById('detailsRoot').innerHTML = '<p class="text-center py-5">Pet not found. <a href="marketplace.html">Go back</a></p>';
 } else {
   const isOwner = user && user.id === pet.ownerId;
   const owner = pet.ownerId ? await DB.getUserById(pet.ownerId) : null;
@@ -92,7 +92,7 @@ if (!pet) {
                 : isOwner ? `<p class="own-listing-note">This is your listing</p>` : '')
             : `<p class="not-available">This pet is no longer available</p>`}
         </div>
-        <a href="index.html" class="btn-back">← Back to all pets</a>
+        <a href="marketplace.html" class="btn-back">← Back to marketplace</a>
       </aside>
     </div>`;
 
@@ -107,7 +107,7 @@ if (!pet) {
   document.getElementById('deleteBtn')?.addEventListener('click', async () => {
     if (!await showConfirm('Delete this listing?')) return;
     await DB.deletePet(pet.id);
-    window.location.href = 'index.html';
+    window.location.href = 'marketplace.html';
   });
   document.getElementById('markSold')?.addEventListener('click', async () => {
     await DB.updatePet(pet.id, { status: 'sold' });

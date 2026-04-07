@@ -191,6 +191,7 @@ async function openConversation(convId, conv) {
   const preview = document.querySelector(`.conv-item[data-id="${convId}"] .conv-item-preview`);
   if (preview) preview.classList.remove('conv-item-preview--unread');
   await MsgDB.markRead(convId, user.id);
+  MsgDB.markSeen(convId, user.id).catch(console.error);
 
   // Build header
   const otherId = conv.otherId || conv.participants.find(id => id !== user.id);
@@ -283,6 +284,8 @@ function subscribeToMessages(convId, participants) {
     snap => {
       latestMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderMessages(latestMessages);
+      // Mark seen whenever new messages arrive while viewing
+      MsgDB.markSeen(activeConvId, user.id).catch(console.error);
     },
     err => {
       console.error('onSnapshot error:', err);

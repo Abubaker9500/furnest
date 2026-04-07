@@ -60,8 +60,11 @@ let currentSearch = '';
 // ── RENDER PETS ───────────────────────────────────────────────────────────────
 function renderPets() {
   const q = currentSearch.toLowerCase();
+  const KNOWN_FILTER_TYPES = ['dog', 'cat', 'bird', 'rabbit'];
   const pets = allPets.filter(pet => {
-    const matchType = currentPetFilter === 'all' || pet.type === currentPetFilter;
+    const matchType = currentPetFilter === 'all'
+      || (currentPetFilter === 'other' && !KNOWN_FILTER_TYPES.includes(pet.type))
+      || pet.type === currentPetFilter;
     const matchSearch = !q
       || (pet.name || '').toLowerCase().includes(q)
       || (pet.breed || '').toLowerCase().includes(q)
@@ -194,4 +197,11 @@ try { allItems = await DB.getItems(); } catch(e) { console.error('Failed to load
 
 document.getElementById('petsLoading')?.remove();
 document.getElementById('itemsLoading')?.remove();
-renderPets();
+
+// Auto-switch tab if ?tab=items is in the URL
+const tabParam = new URLSearchParams(window.location.search).get('tab');
+if (tabParam === 'items') {
+  switchTab('items');
+} else {
+  renderPets();
+}

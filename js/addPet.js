@@ -231,7 +231,7 @@ document.getElementById('petForm').addEventListener('submit', async e => {
     } else {
       await DB.addPet(petData);
     }
-    window.location.href = 'index.html';
+    window.location.href = 'marketplace.html';
   } catch (err) {
     alert('Error saving pet. Please try again.');
     submitBtn.disabled = false;

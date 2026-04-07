@@ -31,8 +31,10 @@ if (!profileUser) {
 }
 
 async function renderProfile(user, isOwn) {
-  const pets = await DB.getPetsByOwner(user.id);
-  const availableCount = pets.filter(p => p.status === 'available').length;
+  const [pets, items] = await Promise.all([
+    DB.getPetsByOwner(user.id),
+    DB.getItemsByOwner(user.id)
+  ]);
   document.title = `${user.name} — Fur Nest`;
   // Direct Firestore read for freshest following/followers data
   const userSnap = await getDoc(doc(db, 'users', user.id));
@@ -41,7 +43,6 @@ async function renderProfile(user, isOwn) {
   const followersList = userData.followers || [];
   const followingCount = followingList.length;
   const followersCount = followersList.length;
-  console.log('USER DATA:', JSON.stringify({ following: followingList, followers: followersList }));
   let isFollowingUser = false;
   if (currentUser && !isOwn) {
     const mySnap = await getDoc(doc(db, 'users', currentUser.id));
@@ -78,7 +79,7 @@ async function renderProfile(user, isOwn) {
       <div class="profile-stats">
         <div class="pstat pstat-clickable" id="openFollowing"><span class="pstat-num">${followingCount}</span><span class="pstat-label">Following</span></div>
         <div class="pstat pstat-clickable" id="openFollowers"><span class="pstat-num">${followersCount}</span><span class="pstat-label">Followers</span></div>
-        <div class="pstat"><span class="pstat-num">${pets.length}</span><span class="pstat-label">Listings</span></div>
+        <div class="pstat"><span class="pstat-num">${pets.length + items.length}</span><span class="pstat-label">Listings</span></div>
       </div>
 
       <!-- Users list modal -->
@@ -108,9 +109,9 @@ async function renderProfile(user, isOwn) {
     </div>
 
     <div class="profile-body">
-      <h2 class="section-title">${isOwn ? 'My listings' : `${user.name.split(' ')[0]}'s listings`}</h2>
+      <h2 class="section-title">${isOwn ? 'My pet listings' : `${user.name.split(' ')[0]}'s pet listings`}</h2>
       ${pets.length === 0 ? `
-        <div class="no-pets"><p>No listings yet.</p>${isOwn ? `<a href="add-pet.html" class="btn-add-pet">Add your first pet</a>` : ''}</div>
+        <div class="no-pets"><p>No pet listings yet.</p>${isOwn ? `<a href="add-pet.html" class="btn-add-pet">List a pet</a>` : ''}</div>
       ` : `
         <div class="profile-pets-grid">
           ${pets.map(pet => {
@@ -136,7 +137,39 @@ async function renderProfile(user, isOwn) {
           }).join('')}
         </div>
       `}
-      ${isOwn ? `<a href="add-pet.html" class="btn-add-listing">+ Add new listing</a>` : ''}
+      ${isOwn ? `<a href="add-pet.html" class="btn-add-listing">+ List a pet</a>` : ''}
+    </div>
+
+    <div class="profile-body">
+      <h2 class="section-title">${isOwn ? 'My item listings' : `${user.name.split(' ')[0]}'s item listings`}</h2>
+      ${items.length === 0 ? `
+        <div class="no-pets"><p>No item listings yet.</p>${isOwn ? `<a href="add-item.html" class="btn-add-pet">List an item</a>` : ''}</div>
+      ` : `
+        <div class="profile-pets-grid">
+          ${items.map(item => {
+            const bKey = item.listingType === 'free' ? 'free' : 'sell';
+            const [label, cls] = badgeMap[bKey] || badgeMap.sell;
+            const displayLabel = bKey === 'sell' && item.price ? '$'+item.price : label;
+            return `
+            <div class="profile-pet-card">
+              <a href="item-details.html?id=${item.id}">
+                <div class="ppc-img-wrap">
+                  <img src="${item.image || 'https://placehold.co/300x200?text=No+Photo'}" alt="${item.title}" loading="lazy">
+                  <span class="listing-badge ${cls}">${displayLabel}</span>
+                  ${item.status === 'sold' ? `<span class="status-overlay">sold</span>` : ''}
+                </div>
+                <div class="ppc-body"><h3>${item.title}</h3><p>${item.category || ''} · ${item.condition || ''}</p></div>
+              </a>
+              ${isOwn ? `
+              <div class="ppc-actions">
+                <a href="add-item.html?edit=${item.id}" class="ppc-btn">Edit</a>
+                <button class="ppc-btn ppc-btn-del" data-item-id="${item.id}">Delete</button>
+              </div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      `}
+      ${isOwn ? `<a href="add-item.html" class="btn-add-listing">+ List an item</a>` : ''}
     </div>
 
     <!-- PET PROFILES SECTION -->
@@ -207,7 +240,7 @@ async function renderProfile(user, isOwn) {
     }
   } catch(e) { console.error('Pet profiles:', e); }
 
-  // Delete buttons
+  // Delete buttons (pets use data-id, items use data-item-id)
   document.querySelectorAll('.ppc-btn-del').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!await showConfirm('Delete this listing?')) return;
@@ -215,7 +248,11 @@ async function renderProfile(user, isOwn) {
       card.style.opacity = '0.5';
       card.style.pointerEvents = 'none';
       try {
-        await DB.deletePet(btn.dataset.id);
+        if (btn.dataset.itemId) {
+          await DB.deleteItem(btn.dataset.itemId);
+        } else {
+          await DB.deletePet(btn.dataset.id);
+        }
         card.remove();
         const countEl = document.querySelector('.pstat:last-child .pstat-num');
         if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);

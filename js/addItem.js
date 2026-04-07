@@ -150,7 +150,7 @@ document.getElementById('itemForm').addEventListener('submit', async e => {
     } else {
       await DB.addItem(itemData);
     }
-    window.location.href = 'marketplace.html';
+    window.location.href = 'marketplace.html?tab=items';
   } catch(err) {
     console.error('Save failed:', err);
     alert('Could not save listing. Please try again.');
