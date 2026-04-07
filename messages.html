@@ -50,7 +50,7 @@ import { Auth } from './js/auth.js';
 import { MsgDB } from './js/messaging.js';
 import { DB } from './js/data.js';
 import { db } from './js/firebase.js';
-import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, doc, getDoc, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 function escapeHtml(str) {
   return String(str ?? '')
@@ -69,7 +69,13 @@ let messageUnsubscribe = null;
 
 async function loadConversations() {
   const list = document.getElementById('convList');
-  allConvs = await MsgDB.getMyConversations(user.id);
+  try {
+    allConvs = await MsgDB.getMyConversations(user.id);
+  } catch(e) {
+    console.error('loadConversations failed:', e);
+    list.innerHTML = '<p class="conv-empty">Could not load conversations.<br>Check your connection and try refreshing.</p>';
+    return;
+  }
 
   if (!allConvs.length) {
     list.innerHTML = '<p class="conv-empty">No conversations yet.<br>Message a pet owner to get started.</p>';
@@ -164,15 +170,23 @@ async function openConversation(convId, conv) {
 
 function subscribeToMessages(convId, participants) {
   if (messageUnsubscribe) messageUnsubscribe();
+  const container = document.getElementById('convMessages');
+  container.innerHTML = '<p class="msgs-empty" style="margin:auto">Loading messages…</p>';
   const q = query(
     collection(db, 'conversations', convId, 'messages'),
     orderBy('createdAt', 'asc'),
     limit(100)
   );
-  messageUnsubscribe = onSnapshot(q, snap => {
-    const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderMessages(messages);
-  });
+  messageUnsubscribe = onSnapshot(q,
+    snap => {
+      const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderMessages(messages);
+    },
+    err => {
+      console.error('onSnapshot error:', err);
+      container.innerHTML = '<p class="msgs-empty" style="margin:auto;color:var(--red)">Could not load messages. Try refreshing.</p>';
+    }
+  );
 }
 
 function renderMessages(messages) {
@@ -237,13 +251,25 @@ document.getElementById('msgInput').addEventListener('input', function() {
 // Load conversations and auto-open if ?id= is set
 await loadConversations();
 if (activeConvId) {
-  const conv = allConvs.find(c => c.id === activeConvId);
-  if (conv) {
-    openConversation(activeConvId, conv);
-  } else {
-    // Conversation not found in list — might be new, try to load it
-    window.location.href = 'messages.html';
+  let conv = allConvs.find(c => c.id === activeConvId);
+  if (!conv) {
+    // Not in list yet (index lag or brand-new conversation) — fetch directly
+    try {
+      const snap = await getDoc(doc(db, 'conversations', activeConvId));
+      if (snap.exists()) {
+        const data = snap.data();
+        const otherId = data.participants.find(id => id !== user.id);
+        const otherUser = await DB.getUserById(otherId);
+        conv = { id: snap.id, ...data, otherUser, otherId };
+        // Add to list so sidebar shows it
+        allConvs.unshift(conv);
+        renderConvList();
+      }
+    } catch(e) {
+      console.error('Could not fetch conversation:', e);
+    }
   }
+  if (conv) openConversation(activeConvId, conv);
 }
 </script>
 </body>
