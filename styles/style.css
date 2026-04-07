@@ -267,6 +267,18 @@ body {
   font-family: inherit; transition: .2s;
 }
 .btn-status:hover { border-color: var(--purple); color: var(--purple); }
+.btn-status-revert { border-color: var(--teal); color: var(--teal); }
+.btn-status-revert:hover { background: var(--teal-light); border-color: var(--teal); }
+/* Detail page skeleton */
+.skeleton-detail { padding: 24px; max-width: 960px; margin: 0 auto; }
+.sk-detail-img { display: block; height: 360px; border-radius: var(--radius); margin-bottom: 24px; }
+.sk-detail-title { height: 32px; width: 55%; border-radius: 8px; margin-bottom: 14px; }
+.sk-detail-sub { height: 18px; width: 35%; border-radius: 6px; margin-bottom: 24px; }
+.sk-detail-stats { display: flex; gap: 12px; margin-bottom: 24px; }
+.sk-detail-stat { height: 60px; flex: 1; border-radius: 10px; }
+.sk-detail-line { height: 14px; border-radius: 6px; margin-bottom: 10px; }
+.sk-detail-line.sk-w80 { width: 80%; }
+.sk-detail-line.sk-w60 { width: 60%; }
 .contact-card { background: #fff; border-radius: var(--radius); border: 1.5px solid var(--border); padding: 20px; margin-bottom: 12px; }
 .owner-info { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .owner-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
@@ -304,6 +316,14 @@ body {
 .forgot-link { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; }
 .forgot-link:hover { color: var(--purple); text-decoration: underline; }
 .auth-reset-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
+.pw-wrap { position: relative; }
+.pw-wrap .form-control { padding-right: 44px; }
+.pw-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 1rem;
+  color: var(--text-muted); padding: 2px 4px; line-height: 1;
+}
+.pw-toggle:hover { color: var(--purple); }
 
 /* ---- PROFILE PAGE ---- */
 .profile-hero {
@@ -662,6 +682,16 @@ body {
 }
 .fn-nav-link:hover { background: var(--purple-light); color: var(--purple); }
 .fn-nav-link.active { background: var(--purple-light); color: var(--purple); }
+/* Mobile nav: hide username and shrink spacing so nav doesn't overflow */
+@media (max-width: 600px) {
+  .fn-nav { padding: 0 12px; }
+  .fn-logo { font-size: 1rem; }
+  .fn-nav-links { gap: 0; }
+  .fn-nav-link { padding: 6px 10px; font-size: 0.82rem; }
+  .nav-username { display: none; }
+  .btn-logout { padding: 4px 10px; font-size: 0.78rem; }
+  .nav-bell { margin: 0 2px; }
+}
 
 /* ---- FEED LAYOUT ---- */
 .feed-layout {

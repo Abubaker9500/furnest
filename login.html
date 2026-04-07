@@ -38,7 +38,10 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Password</label>
-          <input type="password" id="loginPassword" class="form-control" required autocomplete="current-password">
+          <div class="pw-wrap">
+            <input type="password" id="loginPassword" class="form-control" required autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-target="loginPassword" aria-label="Show password">👁</button>
+          </div>
           <div class="text-end mt-1">
             <a href="#" id="forgotPasswordLink" class="forgot-link">Forgot password?</a>
           </div>
@@ -75,11 +78,17 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Password</label>
-          <input type="password" id="regPassword" class="form-control" required autocomplete="new-password" minlength="6">
+          <div class="pw-wrap">
+            <input type="password" id="regPassword" class="form-control" required autocomplete="new-password" minlength="6">
+            <button type="button" class="pw-toggle" data-target="regPassword" aria-label="Show password">👁</button>
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label">Confirm password</label>
-          <input type="password" id="regPassword2" class="form-control" required autocomplete="new-password">
+          <div class="pw-wrap">
+            <input type="password" id="regPassword2" class="form-control" required autocomplete="new-password">
+            <button type="button" class="pw-toggle" data-target="regPassword2" aria-label="Show password">👁</button>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
       </form>
@@ -91,5 +100,15 @@
 
 
 <script type="module" src="js/login.js"></script>
+<script>
+  document.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? '🙈' : '👁';
+    });
+  });
+</script>
 </body>
 </html>
