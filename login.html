@@ -39,10 +39,26 @@
         <div class="mb-3">
           <label class="form-label">Password</label>
           <input type="password" id="loginPassword" class="form-control" required autocomplete="current-password">
+          <div class="text-end mt-1">
+            <a href="#" id="forgotPasswordLink" class="forgot-link">Forgot password?</a>
+          </div>
         </div>
         <button type="submit" class="btn btn-primary w-100 py-2">Sign in</button>
       </form>
       <p class="auth-switch">No account? <a href="#register" onclick="showTab('register')">Create one free</a></p>
+    </div>
+
+    <!-- Reset password panel -->
+    <div id="resetPanel" style="display:none">
+      <p class="auth-reset-desc">Enter your email and we'll send you a reset link.</p>
+      <p id="resetMessage" class="auth-success" style="display:none"></p>
+      <p id="resetError" class="auth-error" style="display:none"></p>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" id="resetEmail" class="form-control" autocomplete="email">
+      </div>
+      <button type="button" class="btn btn-primary w-100 py-2" id="sendResetBtn">Send reset link</button>
+      <p class="auth-switch mt-3"><a href="#" id="backToLoginLink">Back to sign in</a></p>
     </div>
 
     <!-- Register panel -->

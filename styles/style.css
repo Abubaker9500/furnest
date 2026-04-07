@@ -287,8 +287,12 @@ body {
 .auth-tab { flex: 1; border: none; background: none; padding: 10px; font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all .2s; color: var(--text-muted); }
 .auth-tab.active { background: var(--purple); color: #fff; }
 .auth-error { background: #fee2e2; color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; font-weight: 600; }
+.auth-success { background: #d1fae5; color: #065f46; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; font-weight: 600; }
 .auth-switch { text-align: center; margin-top: 16px; font-size: 0.9rem; color: var(--text-muted); }
 .auth-switch a { color: var(--purple); font-weight: 700; text-decoration: none; }
+.forgot-link { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; }
+.forgot-link:hover { color: var(--purple); text-decoration: underline; }
+.auth-reset-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
 
 /* ---- PROFILE PAGE ---- */
 .profile-hero {
