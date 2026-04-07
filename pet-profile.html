@@ -25,6 +25,7 @@
 <script type="module">
 import { Auth } from './js/auth.js';
 import { PetDB, uploadToCloudinary } from './js/petProfile.js';
+import { showConfirm } from './js/confirm.js';
 
 const user = await Auth.init();
 const params = new URLSearchParams(window.location.search);
@@ -137,9 +138,14 @@ else if (pet.visibility === 'private' && (!user || user.id !== pet.ownerId)) {
       grid.querySelectorAll('.gallery-delete').forEach(btn => {
         btn.addEventListener('click', async e => {
           e.stopPropagation();
-          if (!confirm('Delete this photo?')) return;
+          if (!await showConfirm('Delete this photo?')) return;
+          const item = btn.closest('.pp-gallery-item');
+          item.style.opacity = '0.5';
           await PetDB.deleteMemory(petId, btn.dataset.id);
-          location.reload();
+          item.remove();
+          if (!document.querySelector('.pp-gallery-item')) {
+            document.getElementById('galleryEmpty').style.display = '';
+          }
         });
       });
     }
@@ -167,9 +173,14 @@ else if (pet.visibility === 'private' && (!user || user.id !== pet.ownerId)) {
     if (isOwner) {
       list.querySelectorAll('.memory-delete').forEach(btn => {
         btn.addEventListener('click', async () => {
-          if (!confirm('Delete this memory?')) return;
+          if (!await showConfirm('Delete this memory?')) return;
+          const card = btn.closest('.memory-card');
+          card.style.opacity = '0.5';
           await PetDB.deleteMemory(petId, btn.dataset.id);
-          location.reload();
+          card.remove();
+          if (!document.querySelector('.memory-card')) {
+            document.getElementById('memoriesEmpty').style.display = '';
+          }
         });
       });
     }
@@ -179,7 +190,9 @@ else if (pet.visibility === 'private' && (!user || user.id !== pet.ownerId)) {
   if (isOwner) {
     // Delete pet profile
     document.getElementById('deletePetBtn')?.addEventListener('click', async () => {
-      if (!confirm(`Delete ${pet.name}'s profile? This cannot be undone.`)) return;
+      if (!await showConfirm(`Delete ${pet.name}'s profile? This cannot be undone.`, 'Delete profile')) return;
+      const btn = document.getElementById('deletePetBtn');
+      btn.disabled = true; btn.textContent = 'Deleting…';
       await PetDB.deleteProfile(petId);
       window.location.href = 'profile.html';
     });

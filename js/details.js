@@ -1,6 +1,7 @@
 import { DB } from './data.js';
 import { Auth } from './auth.js';
 import { MsgDB } from './messaging.js';
+import { showConfirm } from './confirm.js';
 
 const user = await Auth.init();
 const params = new URLSearchParams(window.location.search);
@@ -102,7 +103,7 @@ if (!pet) {
   });
 
   document.getElementById('deleteBtn')?.addEventListener('click', async () => {
-    if (!confirm('Delete this listing?')) return;
+    if (!await showConfirm('Delete this listing?')) return;
     await DB.deletePet(pet.id);
     window.location.href = 'index.html';
   });

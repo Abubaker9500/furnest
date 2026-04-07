@@ -76,6 +76,7 @@ import { Auth } from './js/auth.js';
 import { FeedDB, uploadPhoto } from './js/feed.js';
 import { db } from './js/firebase.js';
 import { getDocs, collection, limit, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { showConfirm } from './js/confirm.js';
 
 function escapeHtml(str) {
   return String(str ?? '')
@@ -254,7 +255,7 @@ function attachListeners() {
   });
   document.querySelectorAll('.post-delete-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Delete this post?')) return;
+      if (!await showConfirm('Delete this post?')) return;
       const postEl = btn.closest('.feed-post');
       postEl.style.opacity = '0.5';
       postEl.style.pointerEvents = 'none';
