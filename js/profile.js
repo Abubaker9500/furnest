@@ -8,6 +8,8 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gst
 import { showConfirm } from './confirm.js';
 
 const currentUser = await Auth.init();
+if (!currentUser) { window.location.href = 'login.html'; }
+
 const params = new URLSearchParams(window.location.search);
 const viewId = params.get('id');
 
@@ -16,12 +18,10 @@ let isOwnProfile = false;
 
 if (viewId) {
   profileUser = await DB.getUserById(viewId);
-  isOwnProfile = currentUser && currentUser.id === viewId;
-} else if (currentUser) {
+  isOwnProfile = currentUser.id === viewId;
+} else {
   profileUser = currentUser;
   isOwnProfile = true;
-} else {
-  window.location.href = 'login.html';
 }
 
 if (!profileUser) {

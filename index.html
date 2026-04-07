@@ -88,6 +88,8 @@ function escapeHtml(str) {
 }
 
 const user = await Auth.init();
+if (!user) { window.location.href = 'login.html'; }
+
 let currentTab = 'following';
 let postPhotoUrl = '';
 

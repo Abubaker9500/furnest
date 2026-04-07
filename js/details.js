@@ -4,6 +4,8 @@ import { MsgDB } from './messaging.js';
 import { showConfirm } from './confirm.js';
 
 const user = await Auth.init();
+if (!user) { window.location.href = 'login.html'; }
+
 const params = new URLSearchParams(window.location.search);
 const petId = params.get('id');
 
