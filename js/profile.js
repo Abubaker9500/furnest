@@ -5,6 +5,7 @@ import { uploadToCloudinary } from './petProfile.js';
 import { Auth } from './auth.js';
 import { db } from './firebase.js';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { showConfirm } from './confirm.js';
 
 const currentUser = await Auth.init();
 const params = new URLSearchParams(window.location.search);
@@ -209,7 +210,7 @@ async function renderProfile(user, isOwn) {
   // Delete buttons
   document.querySelectorAll('.ppc-btn-del').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Delete this listing?')) return;
+      if (!await showConfirm('Delete this listing?')) return;
       const card = btn.closest('.profile-pet-card');
       card.style.opacity = '0.5';
       card.style.pointerEvents = 'none';
