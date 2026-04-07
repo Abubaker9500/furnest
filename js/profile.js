@@ -198,8 +198,18 @@ async function renderProfile(user, isOwn) {
   document.querySelectorAll('.ppc-btn-del').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Delete this listing?')) return;
-      await DB.deletePet(btn.dataset.id);
-      location.reload();
+      const card = btn.closest('.profile-pet-card');
+      card.style.opacity = '0.5';
+      card.style.pointerEvents = 'none';
+      try {
+        await DB.deletePet(btn.dataset.id);
+        card.remove();
+        const countEl = document.querySelector('.pstat:last-child .pstat-num');
+        if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+      } catch {
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+      }
     });
   });
 
@@ -319,14 +329,23 @@ async function renderProfile(user, isOwn) {
       if (isF) {
         await updateDoc(doc(db, 'users', currentUser.id), { following: arrayRemove(user.id) });
         await updateDoc(doc(db, 'users', user.id), { followers: arrayRemove(currentUser.id) });
+        btn.textContent = 'Follow';
+        btn.classList.remove('following');
       } else {
         await updateDoc(doc(db, 'users', currentUser.id), { following: arrayUnion(user.id) });
         await updateDoc(doc(db, 'users', user.id), { followers: arrayUnion(currentUser.id) });
+        btn.textContent = 'Following';
+        btn.classList.add('following');
       }
-      location.reload();
+      const followerCountEl = document.querySelector('#openFollowers .pstat-num');
+      if (followerCountEl) {
+        const cur = parseInt(followerCountEl.textContent) || 0;
+        followerCountEl.textContent = isF ? Math.max(0, cur - 1) : cur + 1;
+      }
     } catch(e) {
       console.error('Follow/unfollow error:', e.code, e.message);
       btn.textContent = isF ? 'Following' : 'Follow';
+    } finally {
       btn.disabled = false;
     }
   });
