@@ -23,10 +23,23 @@ if (editId) {
   }
 }
 
+// Show/hide "Other" gender input
+document.getElementById('gender').addEventListener('change', function() {
+  document.getElementById('genderOther').style.display = this.value === 'Other' ? '' : 'none';
+});
+
 function prefillForm(pet) {
   const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
   set('name', pet.name); set('type', pet.type); set('breed', pet.breed);
-  set('age', pet.age); set('location', pet.location); set('gender', pet.gender);
+  set('age', pet.age); set('location', pet.location);
+  // Gender: if stored value isn't Male/Female, select "Other" and show custom input
+  if (pet.gender === 'Male' || pet.gender === 'Female' || !pet.gender) {
+    set('gender', pet.gender);
+  } else {
+    document.getElementById('gender').value = 'Other';
+    document.getElementById('genderOther').value = pet.gender;
+    document.getElementById('genderOther').style.display = '';
+  }
   set('price', pet.price);
   document.getElementById('listingType').value = pet.listingType || 'adopt';
   const radioEl = document.querySelector(`input[name="listingTypeR"][value="${pet.listingType || 'adopt'}"]`);
@@ -183,7 +196,9 @@ document.getElementById('petForm').addEventListener('submit', async e => {
     breed:       document.getElementById('breed').value.trim(),
     age:         document.getElementById('age').value.trim(),
     location:    document.getElementById('location').value.trim(),
-    gender:      document.getElementById('gender').value,
+    gender:      document.getElementById('gender').value === 'Other'
+                   ? document.getElementById('genderOther').value.trim()
+                   : document.getElementById('gender').value,
     image:       imageUrl.replace('http://', 'https://'),
     vaccinated:  health.includes('Vaccinated'),
     listingType: document.getElementById('listingType').value,

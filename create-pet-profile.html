@@ -71,7 +71,9 @@
               <select id="petGender" class="form-select">
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
+              <input type="text" id="petGenderOther" class="form-control mt-2" placeholder="Specify gender (optional)" style="display:none">
             </div>
             <div class="col-md-6">
               <label class="form-label">Visibility</label>
@@ -122,10 +124,22 @@ if (editId) {
 function prefill(p) {
   const s = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
   s('petName', p.name); s('petType', p.type); s('petBreed', p.breed);
-  s('petBirthday', p.birthday); s('petGender', p.gender);
-  s('petBio', p.bio); s('petVisibility', p.visibility);
+  s('petBirthday', p.birthday); s('petBio', p.bio); s('petVisibility', p.visibility);
   if (p.avatar) { document.getElementById('avatarPreview').src = p.avatar; }
+  // Gender prefill: if not Male/Female, select Other and show custom input
+  if (p.gender === 'Male' || p.gender === 'Female' || !p.gender) {
+    if (p.gender) document.getElementById('petGender').value = p.gender;
+  } else {
+    document.getElementById('petGender').value = 'Other';
+    document.getElementById('petGenderOther').value = p.gender;
+    document.getElementById('petGenderOther').style.display = '';
+  }
 }
+
+// Show/hide "Other" gender input
+document.getElementById('petGender').addEventListener('change', function() {
+  document.getElementById('petGenderOther').style.display = this.value === 'Other' ? '' : 'none';
+});
 
 // Avatar upload
 let avatarUrl = existing?.avatar || '';
@@ -155,7 +169,9 @@ document.getElementById('petProfileForm').addEventListener('submit', async e => 
     type:       document.getElementById('petType').value,
     breed:      document.getElementById('petBreed').value.trim(),
     birthday:   document.getElementById('petBirthday').value,
-    gender:     document.getElementById('petGender').value,
+    gender:     document.getElementById('petGender').value === 'Other'
+                  ? document.getElementById('petGenderOther').value.trim()
+                  : document.getElementById('petGender').value,
     bio:        document.getElementById('petBio').value.trim(),
     visibility: document.getElementById('petVisibility').value,
     avatar:     avatarUrl,
