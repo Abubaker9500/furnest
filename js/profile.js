@@ -155,6 +155,18 @@ async function renderProfile(user, isOwn) {
           </div>
         </form>
       </div>
+    </div>
+    <div id="avatarGenModal" class="modal-overlay" style="display:none">
+      <div class="modal-box" style="text-align:center">
+        <h2>Generate avatar</h2>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:16px">Type any word to generate a unique avatar — preview updates live.</p>
+        <input type="text" id="avatarSeedInput" placeholder="e.g. fluffy, luna, max…" autocomplete="off" style="width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:inherit;font-size:0.95rem;margin-bottom:16px">
+        <img id="avatarGenPreview" src="" alt="Preview" class="avatar-gen-preview">
+        <div class="modal-actions" style="margin-top:20px">
+          <button class="btn-save" id="confirmAvatarBtn">Use this avatar</button>
+          <button class="btn-cancel" id="cancelAvatarGenBtn">Cancel</button>
+        </div>
+      </div>
     </div>` : ''}
   `;
 
@@ -302,20 +314,50 @@ async function renderProfile(user, isOwn) {
         });
         await DB.updateUser(currentUser.id, { avatar: url });
         status.textContent = 'Done!'; status.className = 'upload-status success';
-        setTimeout(() => location.reload(), 600);
+        document.querySelector('.profile-avatar').src = url;
+        const navAvatar = document.querySelector('.nav-avatar');
+        if (navAvatar) navAvatar.src = url;
+        setTimeout(() => { status.style.display = 'none'; }, 2000);
       } catch {
         status.textContent = 'Upload failed.'; status.className = 'upload-status error';
       }
     });
 
-    // Generate animated avatar
-    document.getElementById('generateAvatarBtn')?.addEventListener('click', async () => {
-      const seed = prompt('Enter a seed word for your avatar (any word or your name):');
-      if (!seed) return;
+    // Generate avatar — open modal
+    document.getElementById('generateAvatarBtn')?.addEventListener('click', () => {
       document.getElementById('avatarChangeMenu').style.display = 'none';
+      const input = document.getElementById('avatarSeedInput');
+      input.value = user.name;
+      document.getElementById('avatarGenPreview').src =
+        `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(user.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      document.getElementById('avatarGenModal').style.display = 'flex';
+      setTimeout(() => input.focus(), 50);
+    });
+
+    document.getElementById('avatarSeedInput')?.addEventListener('input', e => {
+      const seed = e.target.value.trim() || 'preview';
+      document.getElementById('avatarGenPreview').src =
+        `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+    });
+
+    document.getElementById('cancelAvatarGenBtn')?.addEventListener('click', () => {
+      document.getElementById('avatarGenModal').style.display = 'none';
+    });
+
+    document.getElementById('confirmAvatarBtn')?.addEventListener('click', async () => {
+      const seed = document.getElementById('avatarSeedInput').value.trim() || user.name;
+      const btn = document.getElementById('confirmAvatarBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
       const newAvatar = `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
-      await DB.updateUser(currentUser.id, { avatar: newAvatar });
-      location.reload();
+      try {
+        await DB.updateUser(currentUser.id, { avatar: newAvatar });
+        document.querySelector('.profile-avatar').src = newAvatar;
+        const navAvatar = document.querySelector('.nav-avatar');
+        if (navAvatar) navAvatar.src = newAvatar;
+        document.getElementById('avatarGenModal').style.display = 'none';
+      } catch {
+        btn.disabled = false; btn.textContent = 'Use this avatar';
+      }
     });
   }
 
