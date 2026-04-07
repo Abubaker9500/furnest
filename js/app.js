@@ -18,7 +18,7 @@ function getPetBadge(pet) {
 }
 
 function getPetTypeIcon(type) {
-  const icons = { dog: '🐕', cat: '🐈', bird: '🦜', rabbit: '🐇' };
+  const icons = { dog: '🐕', cat: '🐈', bird: '🦜', rabbit: '🐇', fish: '🐟', reptile: '🦎', hamster: '🐹' };
   return icons[type] || '🐾';
 }
 

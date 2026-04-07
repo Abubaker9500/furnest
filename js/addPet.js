@@ -23,6 +23,13 @@ if (editId) {
   }
 }
 
+const KNOWN_TYPES = ['dog', 'cat', 'bird', 'rabbit', 'fish', 'reptile', 'hamster'];
+
+// Show/hide "Other" type input
+document.getElementById('type').addEventListener('change', function() {
+  document.getElementById('typeOther').style.display = this.value === 'other' ? '' : 'none';
+});
+
 // Show/hide "Other" gender input
 document.getElementById('gender').addEventListener('change', function() {
   document.getElementById('genderOther').style.display = this.value === 'Other' ? '' : 'none';
@@ -30,7 +37,15 @@ document.getElementById('gender').addEventListener('change', function() {
 
 function prefillForm(pet) {
   const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
-  set('name', pet.name); set('type', pet.type); set('breed', pet.breed);
+  set('name', pet.name); set('breed', pet.breed);
+  // Type: if stored value isn't a known type, select "other" and show custom input
+  if (!pet.type || KNOWN_TYPES.includes(pet.type)) {
+    set('type', pet.type);
+  } else {
+    document.getElementById('type').value = 'other';
+    document.getElementById('typeOther').value = pet.type;
+    document.getElementById('typeOther').style.display = '';
+  }
   set('age', pet.age); set('location', pet.location);
   // Gender: if stored value isn't Male/Female, select "Other" and show custom input
   if (pet.gender === 'Male' || pet.gender === 'Female' || !pet.gender) {
@@ -192,7 +207,9 @@ document.getElementById('petForm').addEventListener('submit', async e => {
   const health = [...document.querySelectorAll('input[name="health"]:checked')].map(c => c.value);
   const petData = {
     name:        document.getElementById('name').value.trim(),
-    type:        document.getElementById('type').value,
+    type:        document.getElementById('type').value === 'other'
+                   ? (document.getElementById('typeOther').value.trim() || 'other')
+                   : document.getElementById('type').value,
     breed:       document.getElementById('breed').value.trim(),
     age:         document.getElementById('age').value.trim(),
     location:    document.getElementById('location').value.trim(),
