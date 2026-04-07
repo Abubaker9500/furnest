@@ -1,6 +1,6 @@
 import { db } from './firebase.js';
 import {
-  collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc,
+  collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, serverTimestamp, increment
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -19,7 +19,8 @@ const MsgDB = {
         lastMessage: '',
         lastMessageAt: serverTimestamp(),
         lastMessageBy: myId,
-        unread: { [myId]: 0, [otherId]: 0 }
+        unread: { [myId]: 0, [otherId]: 0 },
+        seenAt: {}
       });
     }
     return id;
@@ -62,10 +63,43 @@ const MsgDB = {
     });
   },
 
-  async markRead(convId, userId) {
+  // Mark conversation as read + update seenAt timestamp
+  async markSeen(convId, userId) {
     const update = {};
     update[`unread.${userId}`] = 0;
+    update[`seenAt.${userId}`] = serverTimestamp();
     await updateDoc(doc(db, 'conversations', convId), update);
+  },
+
+  // Legacy alias
+  async markRead(convId, userId) {
+    return this.markSeen(convId, userId);
+  },
+
+  async deleteMessage(convId, msgId) {
+    await deleteDoc(doc(db, 'conversations', convId, 'messages', msgId));
+    // Update lastMessage from remaining messages
+    const q = query(
+      collection(db, 'conversations', convId, 'messages'),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+    const snap = await getDocs(q);
+    const last = snap.docs[0]?.data();
+    await updateDoc(doc(db, 'conversations', convId), {
+      lastMessage: last?.text || '',
+      lastMessageAt: last?.createdAt || serverTimestamp(),
+      lastMessageBy: last?.senderId || ''
+    });
+  },
+
+  async deleteConversation(convId) {
+    // Delete all messages first
+    const q = query(collection(db, 'conversations', convId, 'messages'));
+    const snap = await getDocs(q);
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+    // Delete conversation document
+    await deleteDoc(doc(db, 'conversations', convId));
   },
 
   async getTotalUnread(myId) {

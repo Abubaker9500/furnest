@@ -44,11 +44,15 @@
   </div>
 </div>
 
+<!-- Floating context menu for messages -->
+<div id="msgCtxMenu" class="msg-ctx-menu" style="display:none"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
 import { Auth } from './js/auth.js';
 import { MsgDB } from './js/messaging.js';
 import { DB } from './js/data.js';
+import { showConfirm } from './js/confirm.js';
 import { db } from './js/firebase.js';
 import { collection, doc, getDoc, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -66,7 +70,55 @@ let activeConvId = params.get('id');
 let allConvs = [];
 let activeConv = null;
 let messageUnsubscribe = null;
+let convUnsubscribe = null;
+let convSeenAt = {};
+let latestMessages = [];
 
+// --- Global context menu ---
+const ctxMenu = document.getElementById('msgCtxMenu');
+
+document.addEventListener('click', e => {
+  // Close context menu
+  if (!ctxMenu.contains(e.target)) ctxMenu.style.display = 'none';
+  // Close conv more menu
+  const moreMenu = document.getElementById('convMoreMenu');
+  const moreBtn = document.getElementById('convMoreBtn');
+  if (moreMenu && moreBtn && !moreBtn.contains(e.target) && !moreMenu.contains(e.target)) {
+    moreMenu.style.display = 'none';
+  }
+});
+
+function showCtxMenu(x, y, msg) {
+  const isMine = msg.senderId === user.id;
+  const time = msg.createdAt?.toDate
+    ? msg.createdAt.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    : '';
+
+  const parts = [];
+  if (time) parts.push(`<div class="msg-ctx-time">${escapeHtml(time)}</div>`);
+  if (isMine) parts.push(`<button class="msg-ctx-btn msg-ctx-btn--danger" id="ctxDeleteMsg">Delete message</button>`);
+  if (!parts.length) return;
+
+  ctxMenu.innerHTML = parts.join('');
+  ctxMenu.style.display = 'block';
+
+  // Position within viewport
+  const w = 160, h = 90;
+  ctxMenu.style.left = Math.min(x, window.innerWidth - w - 8) + 'px';
+  ctxMenu.style.top = Math.min(y, window.innerHeight - h - 8) + 'px';
+
+  document.getElementById('ctxDeleteMsg')?.addEventListener('click', async () => {
+    ctxMenu.style.display = 'none';
+    if (!await showConfirm('Delete this message?')) return;
+    try {
+      await MsgDB.deleteMessage(activeConvId, msg.id);
+    } catch(e) {
+      console.error('Delete message failed:', e);
+    }
+  });
+}
+
+// --- Conversations ---
 async function loadConversations() {
   const list = document.getElementById('convList');
   try {
@@ -82,7 +134,6 @@ async function loadConversations() {
     return;
   }
 
-  // Fetch other user info for each conversation
   allConvs = await Promise.all(allConvs.map(async conv => {
     const otherId = conv.participants.find(id => id !== user.id);
     const otherUser = await DB.getUserById(otherId);
@@ -125,14 +176,14 @@ function renderConvList() {
 async function openConversation(convId, conv) {
   activeConvId = convId;
   activeConv = conv;
+  convSeenAt = conv.seenAt || {};
   history.replaceState({}, '', `messages.html?id=${convId}`);
 
-  // Update active state in list
   document.querySelectorAll('.conv-item').forEach(el => {
     el.classList.toggle('active', el.dataset.id === convId);
   });
 
-  // Clear unread dot and count in local state
+  // Clear unread locally
   const convIndex = allConvs.findIndex(c => c.id === convId);
   if (convIndex !== -1) allConvs[convIndex].unread = { ...allConvs[convIndex].unread, [user.id]: 0 };
   const dot = document.querySelector(`.conv-item[data-id="${convId}"] .conv-unread-dot`);
@@ -148,30 +199,81 @@ async function openConversation(convId, conv) {
     <button class="conv-back-btn" id="convBackBtn">←</button>
     <img src="${otherUser?.avatar || 'https://placehold.co/36x36?text=🐾'}" class="conv-header-avatar" alt="">
     <a href="profile.html?id=${otherId}" class="conv-header-name">${escapeHtml(otherUser?.name || 'Unknown')}</a>
+    <div class="conv-header-spacer"></div>
+    <div class="conv-more-wrap">
+      <button class="conv-more-btn" id="convMoreBtn" title="More options">⋮</button>
+      <div class="conv-more-menu" id="convMoreMenu" style="display:none">
+        <button class="conv-more-item conv-more-item--danger" id="deleteConvBtn">Delete conversation</button>
+      </div>
+    </div>
   `;
+
   document.getElementById('convBackBtn').addEventListener('click', () => {
     document.getElementById('messagesSidebar').classList.remove('msgs-sidebar-hidden');
     document.getElementById('messagesMain').classList.remove('msgs-main-shown');
   });
 
+  document.getElementById('convMoreBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    const menu = document.getElementById('convMoreMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('deleteConvBtn').addEventListener('click', async () => {
+    document.getElementById('convMoreMenu').style.display = 'none';
+    if (!await showConfirm('Delete this entire conversation? This cannot be undone.', 'Delete')) return;
+    try {
+      await MsgDB.deleteConversation(convId);
+    } catch(e) {
+      console.error('Delete conversation failed:', e);
+      return;
+    }
+    // Reset UI
+    if (messageUnsubscribe) { messageUnsubscribe(); messageUnsubscribe = null; }
+    if (convUnsubscribe) { convUnsubscribe(); convUnsubscribe = null; }
+    latestMessages = [];
+    allConvs = allConvs.filter(c => c.id !== convId);
+    activeConvId = null;
+    activeConv = null;
+    renderConvList();
+    document.getElementById('convView').style.display = 'none';
+    document.getElementById('noConvSelected').style.display = '';
+    document.getElementById('messagesSidebar').classList.remove('msgs-sidebar-hidden');
+    document.getElementById('messagesMain').classList.remove('msgs-main-shown');
+    history.replaceState({}, '', 'messages.html');
+  });
+
   // Show conversation view
   document.getElementById('noConvSelected').style.display = 'none';
   document.getElementById('convView').style.display = 'flex';
-
-  // Mobile: swap panels
   document.getElementById('messagesSidebar').classList.add('msgs-sidebar-hidden');
   document.getElementById('messagesMain').classList.add('msgs-main-shown');
 
-  // Subscribe to real-time messages
   subscribeToMessages(convId, conv.participants);
-
   document.getElementById('msgInput').focus();
 }
 
 function subscribeToMessages(convId, participants) {
   if (messageUnsubscribe) messageUnsubscribe();
+  if (convUnsubscribe) convUnsubscribe();
+  latestMessages = [];
+
   const container = document.getElementById('convMessages');
   container.innerHTML = '<p class="msgs-empty" style="margin:auto">Loading messages…</p>';
+
+  // Subscribe to conv doc for real-time seenAt updates
+  convUnsubscribe = onSnapshot(
+    doc(db, 'conversations', convId),
+    snap => {
+      if (snap.exists()) {
+        convSeenAt = snap.data().seenAt || {};
+        if (latestMessages.length) renderMessages(latestMessages);
+      }
+    },
+    err => console.error('conv snapshot error:', err)
+  );
+
+  // Subscribe to messages
   const q = query(
     collection(db, 'conversations', convId, 'messages'),
     orderBy('createdAt', 'asc'),
@@ -179,8 +281,8 @@ function subscribeToMessages(convId, participants) {
   );
   messageUnsubscribe = onSnapshot(q,
     snap => {
-      const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderMessages(messages);
+      latestMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderMessages(latestMessages);
     },
     err => {
       console.error('onSnapshot error:', err);
@@ -192,6 +294,7 @@ function subscribeToMessages(convId, participants) {
 function renderMessages(messages) {
   const container = document.getElementById('convMessages');
   const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 60;
+  const otherId = activeConv?.participants?.find(id => id !== user.id);
 
   if (!messages.length) {
     container.innerHTML = '<p class="msgs-empty">No messages yet. Say hello! 👋</p>';
@@ -204,11 +307,70 @@ function renderMessages(messages) {
       ? msg.createdAt.toDate().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       : '';
     return `
-      <div class="msg-bubble-wrap ${isMine ? 'mine' : 'theirs'}">
+      <div class="msg-bubble-wrap ${isMine ? 'mine' : 'theirs'}" data-id="${msg.id}">
         <div class="msg-bubble">${escapeHtml(msg.text)}</div>
         ${time ? `<span class="msg-time">${time}</span>` : ''}
       </div>`;
   }).join('');
+
+  // Seen indicator under last message I sent that the other user has seen
+  const otherSeenAt = convSeenAt[otherId];
+  if (otherSeenAt) {
+    const myMessages = messages.filter(m => m.senderId === user.id);
+    const lastMyMsg = myMessages[myMessages.length - 1];
+    if (lastMyMsg?.createdAt?.toDate) {
+      const msgTime = lastMyMsg.createdAt.toDate();
+      const seenTime = otherSeenAt.toDate ? otherSeenAt.toDate() : new Date(otherSeenAt);
+      if (seenTime >= msgTime) {
+        const lastWrap = container.querySelector(`.msg-bubble-wrap[data-id="${lastMyMsg.id}"]`);
+        if (lastWrap) {
+          const seenEl = document.createElement('span');
+          seenEl.className = 'msg-seen';
+          seenEl.textContent = 'Seen';
+          lastWrap.appendChild(seenEl);
+        }
+      }
+    }
+  }
+
+  // Attach interactions to each bubble
+  container.querySelectorAll('.msg-bubble-wrap').forEach((wrap, i) => {
+    const msg = messages[i];
+    const bubble = wrap.querySelector('.msg-bubble');
+    let pressTimer = null;
+
+    // Touch: long-press → context menu, short tap → toggle time
+    bubble.addEventListener('touchstart', e => {
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        const touch = e.touches[0];
+        showCtxMenu(touch.clientX, touch.clientY, msg);
+      }, 500);
+    }, { passive: true });
+
+    bubble.addEventListener('touchend', () => {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        wrap.classList.toggle('msg-show-time');
+      }
+    });
+
+    bubble.addEventListener('touchmove', () => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    }, { passive: true });
+
+    // Click: toggle time visibility (desktop tap)
+    bubble.addEventListener('click', () => {
+      wrap.classList.toggle('msg-show-time');
+    });
+
+    // Right-click: context menu (desktop)
+    bubble.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      showCtxMenu(e.clientX, e.clientY, msg);
+    });
+  });
 
   if (wasAtBottom) container.scrollTop = container.scrollHeight;
 }
@@ -227,7 +389,6 @@ async function sendMessage() {
   const participants = activeConv.participants;
   try {
     await MsgDB.sendMessage(activeConvId, user.id, text, participants);
-    // Update preview in sidebar
     const previewEl = document.querySelector(`.conv-item[data-id="${activeConvId}"] .conv-item-preview`);
     if (previewEl) previewEl.textContent = text;
   } catch(e) {
@@ -242,7 +403,6 @@ document.getElementById('sendMsgBtn').addEventListener('click', sendMessage);
 document.getElementById('msgInput').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
-// Auto-resize textarea
 document.getElementById('msgInput').addEventListener('input', function() {
   this.style.height = '';
   this.style.height = Math.min(this.scrollHeight, 120) + 'px';
@@ -253,7 +413,6 @@ await loadConversations();
 if (activeConvId) {
   let conv = allConvs.find(c => c.id === activeConvId);
   if (!conv) {
-    // Not in list yet (index lag or brand-new conversation) — fetch directly
     try {
       const snap = await getDoc(doc(db, 'conversations', activeConvId));
       if (snap.exists()) {
@@ -261,7 +420,6 @@ if (activeConvId) {
         const otherId = data.participants.find(id => id !== user.id);
         const otherUser = await DB.getUserById(otherId);
         conv = { id: snap.id, ...data, otherUser, otherId };
-        // Add to list so sidebar shows it
         allConvs.unshift(conv);
         renderConvList();
       }

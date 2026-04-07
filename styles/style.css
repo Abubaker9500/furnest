@@ -441,7 +441,51 @@ body {
 }
 .mine .msg-bubble { background: var(--purple); color: #fff; border-bottom-right-radius: 4px; }
 .theirs .msg-bubble { background: #fff; color: var(--text); border: 1.5px solid var(--border); border-bottom-left-radius: 4px; }
-.msg-time { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; padding: 0 4px; }
+.msg-time {
+  font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; padding: 0 4px;
+  opacity: 0; transition: opacity 0.15s; pointer-events: none; user-select: none;
+}
+.msg-bubble-wrap:hover .msg-time,
+.msg-bubble-wrap.msg-show-time .msg-time { opacity: 1; }
+.msg-seen {
+  font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; padding: 0 4px;
+  align-self: flex-end;
+}
+/* Context menu */
+.msg-ctx-menu {
+  position: fixed; z-index: 1200; background: #fff; border: 1.5px solid var(--border);
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 150px;
+  overflow: hidden;
+}
+.msg-ctx-time {
+  padding: 10px 14px 8px; font-size: 0.78rem; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); text-align: center;
+}
+.msg-ctx-btn {
+  display: block; width: 100%; padding: 10px 14px; border: none; background: none;
+  text-align: left; font-size: 0.88rem; font-family: inherit; cursor: pointer;
+}
+.msg-ctx-btn:hover { background: var(--purple-light); }
+.msg-ctx-btn--danger { color: var(--red); }
+/* Conv header more button */
+.conv-header-spacer { flex: 1; }
+.conv-more-wrap { position: relative; flex-shrink: 0; }
+.conv-more-btn {
+  background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-muted);
+  padding: 4px 8px; border-radius: 8px; line-height: 1;
+}
+.conv-more-btn:hover { background: var(--purple-light); color: var(--purple); }
+.conv-more-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); background: #fff;
+  border: 1.5px solid var(--border); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  min-width: 180px; z-index: 100; overflow: hidden;
+}
+.conv-more-item {
+  display: block; width: 100%; padding: 11px 16px; border: none; background: none;
+  text-align: left; font-size: 0.88rem; font-family: inherit; cursor: pointer;
+}
+.conv-more-item:hover { background: var(--purple-light); }
+.conv-more-item--danger { color: var(--red); }
 /* Input bar */
 .conv-input-bar {
   display: flex; align-items: flex-end; gap: 10px; padding: 14px 20px;
