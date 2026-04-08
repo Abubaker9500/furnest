@@ -114,11 +114,6 @@
 
           <label class="form-label fw-semibold">Photo</label>
 
-          <div class="img-tabs">
-            <button type="button" class="img-tab active" id="tabFile">Upload photo</button>
-            <button type="button" class="img-tab" id="tabUrl">Paste URL</button>
-          </div>
-
           <div id="filePane">
             <label class="upload-area" id="uploadArea">
               <input type="file" id="imageFile" accept="image/*" style="display:none">
@@ -130,10 +125,6 @@
             </label>
             <p id="uploadStatus" class="upload-status" style="display:none"></p>
             <progress id="uploadProgress" value="0" max="100" class="upload-progress" style="display:none"></progress>
-          </div>
-
-          <div id="urlPane" style="display:none">
-            <input type="url" id="imageUrl" class="form-control" placeholder="https://example.com/photo.jpg">
           </div>
 
           <img id="imagePreview" src="" alt="Preview" class="img-preview rounded-3 mt-2" style="display:none">

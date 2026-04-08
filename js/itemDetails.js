@@ -81,15 +81,11 @@ if (!item) {
           <p style="line-height:1.7; color:var(--text-muted)">${escapeHtml(item.description)}</p>
         </div>` : ''}
 
-        ${isOwner ? `
+        ${isOwner && item.status !== 'sold' ? `
         <div class="detail-section">
           <h3>Update status</h3>
           <div class="status-btns">
-            ${item.status !== 'sold' ? `
-              <button class="btn-status" id="markSold">Mark as Sold</button>
-            ` : `
-              <button class="btn-status btn-status-revert" id="markAvailable">Mark as Available</button>
-            `}
+            <button class="btn-status" id="markSold">Mark as Sold</button>
           </div>
         </div>` : ''}
       </div>
@@ -129,10 +125,6 @@ if (!item) {
 
   document.getElementById('markSold')?.addEventListener('click', async () => {
     await DB.updateItem(item.id, { status: 'sold' });
-    location.reload();
-  });
-  document.getElementById('markAvailable')?.addEventListener('click', async () => {
-    await DB.updateItem(item.id, { status: 'available' });
     location.reload();
   });
 }

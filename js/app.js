@@ -154,8 +154,8 @@ function switchTab(tab) {
   document.querySelectorAll('.market-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.getElementById('petsSection').style.display  = tab === 'pets'  ? '' : 'none';
   document.getElementById('itemsSection').style.display = tab === 'items' ? '' : 'none';
-  document.getElementById('petFilters').style.display   = tab === 'pets'  ? '' : 'none';
-  document.getElementById('itemFilters').style.display  = tab === 'items' ? '' : 'none';
+  document.getElementById('petFilters').classList.toggle('filter-hidden',  tab !== 'pets');
+  document.getElementById('itemFilters').classList.toggle('filter-hidden', tab !== 'items');
   document.getElementById('addPetBtn').style.display    = tab === 'pets'  ? '' : 'none';
   document.getElementById('addItemBtn').style.display   = tab === 'items' ? '' : 'none';
   if (tab === 'pets') renderPets(); else renderItems();

@@ -118,6 +118,7 @@ body {
 }
 .filter-btn:hover { background: rgba(255,255,255,0.3); }
 .filter-btn.active { background: #fff; color: var(--purple); border-color: #fff; }
+.filter-hidden { display: none !important; }
 
 .add-pet-btn {
   display: inline-block;

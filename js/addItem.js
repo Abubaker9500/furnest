@@ -53,22 +53,8 @@ document.querySelectorAll('input[name="listingTypeR"]').forEach(radio => {
   });
 });
 
-// ── Image upload tabs ─────────────────────────────────────────────────────────
+// ── Image upload ──────────────────────────────────────────────────────────────
 let imageUrl = existingItem?.image || '';
-
-document.getElementById('tabFile').addEventListener('click', () => {
-  document.getElementById('tabFile').classList.add('active');
-  document.getElementById('tabUrl').classList.remove('active');
-  document.getElementById('fileUploadPanel').style.display = '';
-  document.getElementById('urlPanel').style.display = 'none';
-});
-
-document.getElementById('tabUrl').addEventListener('click', () => {
-  document.getElementById('tabUrl').classList.add('active');
-  document.getElementById('tabFile').classList.remove('active');
-  document.getElementById('urlPanel').style.display = '';
-  document.getElementById('fileUploadPanel').style.display = 'none';
-});
 
 function uploadToCloudinary(file, onProgress) {
   return new Promise((resolve, reject) => {
@@ -104,20 +90,11 @@ document.getElementById('imageFile').addEventListener('change', async e => {
   }
 });
 
-document.getElementById('previewUrlBtn').addEventListener('click', () => {
-  const url = document.getElementById('imageUrl').value.trim();
-  if (!url) return;
-  imageUrl = url;
-  document.getElementById('imagePreview').src = url;
-  document.getElementById('imagePreviewWrap').style.display = '';
-});
-
 document.getElementById('removeImage').addEventListener('click', () => {
   imageUrl = '';
   document.getElementById('imagePreview').src = '';
   document.getElementById('imagePreviewWrap').style.display = 'none';
   document.getElementById('imageFile').value = '';
-  document.getElementById('imageUrl').value = '';
 });
 
 // ── Form submit ───────────────────────────────────────────────────────────────

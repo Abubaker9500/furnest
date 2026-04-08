@@ -86,11 +86,6 @@
 
     <div class="fn-card mb-4">
       <h5 class="fn-card-title">Photo</h5>
-      <div class="upload-tabs mb-3">
-        <button type="button" class="upload-tab active" id="tabFile">Upload file</button>
-        <button type="button" class="upload-tab" id="tabUrl">Paste URL</button>
-      </div>
-
       <div id="fileUploadPanel">
         <label class="upload-area" id="uploadArea">
           <input type="file" id="imageFile" accept="image/jpeg,image/png,image/webp" style="display:none">
@@ -99,11 +94,6 @@
           <span class="upload-hint">JPG, PNG or WEBP · max 5 MB</span>
         </label>
         <p id="uploadStatus" class="upload-status" style="display:none"></p>
-      </div>
-
-      <div id="urlPanel" style="display:none">
-        <input type="url" id="imageUrl" class="form-control mb-2" placeholder="https://example.com/photo.jpg">
-        <button type="button" id="previewUrlBtn" class="btn btn-outline-secondary btn-sm">Preview</button>
       </div>
 
       <div id="imagePreviewWrap" style="display:none; margin-top:12px">

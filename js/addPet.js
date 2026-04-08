@@ -72,36 +72,13 @@ function prefillForm(pet) {
   }
 }
 
-// ── Image tabs ─────────────────────────────────────────────────
-const tabFile  = document.getElementById('tabFile');
-const tabUrl   = document.getElementById('tabUrl');
-const filePane = document.getElementById('filePane');
-const urlPane  = document.getElementById('urlPane');
-
-tabFile.addEventListener('click', () => {
-  tabFile.classList.add('active'); tabUrl.classList.remove('active');
-  filePane.style.display = ''; urlPane.style.display = 'none';
-});
-tabUrl.addEventListener('click', () => {
-  tabUrl.classList.add('active'); tabFile.classList.remove('active');
-  urlPane.style.display = ''; filePane.style.display = 'none';
-});
-
 // ── Elements ───────────────────────────────────────────────────
 const fileInput    = document.getElementById('imageFile');
-const urlInput     = document.getElementById('imageUrl');
 const preview      = document.getElementById('imagePreview');
 const uploadStatus = document.getElementById('uploadStatus');
 const progressBar  = document.getElementById('uploadProgress');
 
 let uploadedImageUrl = '';
-
-// URL preview
-urlInput.addEventListener('input', e => {
-  const val = e.target.value.trim();
-  preview.src = val; preview.style.display = val ? '' : 'none';
-  uploadedImageUrl = val;
-});
 
 // File preview
 fileInput.addEventListener('change', e => {

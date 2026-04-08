@@ -67,16 +67,12 @@ if (!pet) {
           <h3>Health &amp; traits</h3>
           <div class="health-tags">${healthTags.map(t => `<span class="health-tag">${t}</span>`).join('')}</div>
         </div>` : ''}
-        ${isOwner ? `
+        ${isOwner && pet.status === 'available' ? `
         <div class="detail-section">
           <h3>Update status</h3>
           <div class="status-btns">
-            ${pet.status === 'available' ? `
-              <button class="btn-status" id="markSold">Mark as Sold</button>
-              <button class="btn-status" id="markAdopted">Mark as Adopted</button>
-            ` : `
-              <button class="btn-status btn-status-revert" id="markAvailable">Mark as Available</button>
-            `}
+            <button class="btn-status" id="markSold">Mark as Sold</button>
+            <button class="btn-status" id="markAdopted">Mark as Adopted</button>
           </div>
         </div>` : ''}
       </div>
@@ -119,10 +115,6 @@ if (!pet) {
   });
   document.getElementById('markAdopted')?.addEventListener('click', async () => {
     await DB.updatePet(pet.id, { status: 'adopted' });
-    location.reload();
-  });
-  document.getElementById('markAvailable')?.addEventListener('click', async () => {
-    await DB.updatePet(pet.id, { status: 'available' });
     location.reload();
   });
 }
