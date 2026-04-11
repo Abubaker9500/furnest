@@ -290,39 +290,75 @@ function attachListeners() {
 async function loadSuggestions() {
   const container = document.getElementById('suggestedUsers');
   try {
-    const snap = await getDocs(query(collection(db, 'users'), limit(6)));
-    const users = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.id !== user?.id);
-    if (!users.length) { container.innerHTML = '<p class="pp-empty">No users yet.</p>'; return; }
-    const following = user ? await FeedDB.getFollowing(user.id) : [];
-    container.innerHTML = users.map(u => `
-      <div class="suggested-user">
+    // Fetch a pool of users and the current user's following list in parallel
+    const [snap, following] = await Promise.all([
+      getDocs(query(collection(db, 'users'), limit(40))),
+      user ? FeedDB.getFollowing(user.id) : Promise.resolve([])
+    ]);
+    const followingSet = new Set(following);
+
+    // Exclude self and already-followed users
+    let pool = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(u => u.id !== user?.id && !followingSet.has(u.id));
+
+    // Score by relevance: same location gets highest boost, then follower count
+    const myLocation = (user?.location || '').toLowerCase().trim();
+    pool = pool.map(u => {
+      let score = 0;
+      if (myLocation && u.location) {
+        const theirLoc = u.location.toLowerCase().trim();
+        if (theirLoc === myLocation) score += 4;
+        else if (theirLoc.includes(myLocation) || myLocation.includes(theirLoc)) score += 2;
+      }
+      score += Math.min((u.followers || []).length, 3); // up to +3 for popularity
+      return { ...u, _score: score };
+    });
+
+    // Sort by score, shuffle equally-scored entries for variety, take top 5
+    pool.sort((a, b) => b._score - a._score || Math.random() - 0.5);
+    const suggestions = pool.slice(0, 5);
+
+    if (!suggestions.length) {
+      container.innerHTML = '<p class="pp-empty">No suggestions right now.</p>';
+      return;
+    }
+
+    container.innerHTML = suggestions.map(u => `
+      <div class="suggested-user" data-uid="${u.id}">
         <a href="profile.html?id=${u.id}" class="suggested-user-info">
-          <img src="${u.avatar||'https://placehold.co/36x36?text=🐾'}" class="suggested-avatar" alt="${u.name}">
-          <span class="suggested-name">${u.name}</span>
+          <img src="${(u.avatar||'').startsWith('http') ? escapeHtml(u.avatar) : 'https://placehold.co/36x36?text=🐾'}" class="suggested-avatar" alt="${escapeHtml(u.name)}">
+          <div class="suggested-text">
+            <span class="suggested-name">${escapeHtml(u.name)}</span>
+            ${u.location ? `<span class="suggested-meta">📍 ${escapeHtml(u.location)}</span>` : ''}
+          </div>
         </a>
-        ${user ? `<button class="btn-follow ${following.includes(u.id)?'following':''}" data-id="${u.id}">${following.includes(u.id)?'Following':'Follow'}</button>` : ''}
+        ${user ? `<button class="btn-follow" data-id="${u.id}">Follow</button>` : ''}
       </div>`).join('');
+
     container.querySelectorAll('.btn-follow').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const isF = btn.classList.contains('following');
         btn.disabled = true;
+        btn.textContent = '…';
         try {
-          if (isF) {
-            await FeedDB.unfollowUser(user.id, btn.dataset.id);
-            btn.textContent = 'Follow';
-            btn.classList.remove('following');
-          } else {
-            await FeedDB.followUser(user.id, btn.dataset.id, user.name, user.avatar);
-            btn.textContent = 'Following';
-            btn.classList.add('following');
+          await FeedDB.followUser(user.id, btn.dataset.id, user.name, user.avatar);
+          // Remove from list immediately after following
+          const card = container.querySelector(`[data-uid="${btn.dataset.id}"]`);
+          if (card) card.remove();
+          if (!container.querySelector('.suggested-user')) {
+            container.innerHTML = '<p class="pp-empty">No more suggestions.</p>';
           }
         } catch(e) {
-          console.error('Follow/unfollow error:', e);
+          console.error('Follow error:', e);
+          btn.disabled = false;
+          btn.textContent = 'Follow';
         }
-        btn.disabled = false;
       });
     });
-  } catch { container.innerHTML = '<p class="pp-empty">Could not load.</p>'; }
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = '<p class="pp-empty">Could not load.</p>';
+  }
 }
 
 // ── User search ───────────────────────────────────────────────────────────────
