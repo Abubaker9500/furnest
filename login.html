@@ -4,108 +4,131 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign in — Fur Nest</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="styles/style.css">
 </head>
-<body>
+<body class="ig-body">
 
-<nav class="fn-nav">
-  <a href="index.html" class="fn-logo">🐾 Fur Nest</a>
-  <div class="fn-nav-links">
-    <a href="index.html" class="fn-nav-link">Feed</a>
-    <a href="marketplace.html" class="fn-nav-link">Marketplace</a>
-  </div>
-  <div id="nav-auth" class="nav-auth"></div>
-</nav>
+<div class="ig-layout">
 
-<div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">🐾</div>
-    <h1 class="auth-title">Welcome to Fur Nest</h1>
-
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tab-login">Sign in</button>
-      <button class="auth-tab" id="tab-register">Create account</button>
+  <!-- Left: phone mockup -->
+  <div class="ig-left">
+    <div class="ig-phone">
+      <div class="ig-phone-notch"></div>
+      <div class="ig-phone-content">
+        <div class="ig-app-header">🐾 Fur Nest</div>
+        <div class="ig-app-post">
+          <div class="ig-app-post-header">
+            <span class="ig-app-post-avatar">🐕</span>
+            <span class="ig-app-post-name">fluffy_buddy</span>
+          </div>
+          <div class="ig-app-post-img" style="background:linear-gradient(135deg,#f5f0ff,#dbeafe)">🛁 Bath time!</div>
+          <div class="ig-app-post-actions">🤍 34 likes</div>
+        </div>
+        <div class="ig-app-post">
+          <div class="ig-app-post-header">
+            <span class="ig-app-post-avatar">🐈</span>
+            <span class="ig-app-post-name">kitty_naps</span>
+          </div>
+          <div class="ig-app-post-img" style="background:linear-gradient(135deg,#fff0f5,#f5f0ff)">😴 Nap o'clock</div>
+          <div class="ig-app-post-actions">❤️ 87 likes</div>
+        </div>
+        <div class="ig-app-post">
+          <div class="ig-app-post-header">
+            <span class="ig-app-post-avatar">🐇</span>
+            <span class="ig-app-post-name">bunny_hop</span>
+          </div>
+          <div class="ig-app-post-img" style="background:linear-gradient(135deg,#f0fff4,#f5f0ff)">🥕 Treat time!</div>
+          <div class="ig-app-post-actions">🤍 51 likes</div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Login panel -->
-    <div id="loginPanel">
+  <!-- Right: forms -->
+  <div class="ig-right">
+
+    <!-- Login card -->
+    <div id="loginCard" class="ig-card">
+      <div class="ig-card-logo">🐾 Fur Nest</div>
+      <p class="ig-card-tagline">Sign in to see pets near you</p>
+
       <form id="loginForm">
         <p id="loginError" class="auth-error" style="display:none"></p>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" id="loginEmail" class="form-control" required autocomplete="email">
+        <input type="email"    id="loginEmail"    class="ig-input" placeholder="Email" required autocomplete="email">
+        <div class="ig-input-pw">
+          <input type="password" id="loginPassword" class="ig-input" placeholder="Password" required autocomplete="current-password">
+          <button type="button" class="pw-toggle" data-target="loginPassword" aria-label="Show password">👁</button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <div class="pw-wrap">
-            <input type="password" id="loginPassword" class="form-control" required autocomplete="current-password">
-            <button type="button" class="pw-toggle" data-target="loginPassword" aria-label="Show password">👁</button>
-          </div>
-          <div class="text-end mt-1">
-            <a href="#" id="forgotPasswordLink" class="forgot-link">Forgot password?</a>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary w-100 py-2">Sign in</button>
+        <button type="submit" class="ig-btn">Sign in</button>
       </form>
-      <p class="auth-switch">No account? <a href="#register" onclick="showTab('register')">Create one free</a></p>
-    </div>
 
-    <!-- Reset password panel -->
-    <div id="resetPanel" style="display:none">
-      <p class="auth-reset-desc">Enter your email and we'll send you a reset link.</p>
-      <p id="resetMessage" class="auth-success" style="display:none"></p>
-      <p id="resetError" class="auth-error" style="display:none"></p>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input type="email" id="resetEmail" class="form-control" autocomplete="email">
+      <div class="ig-or"><span>OR</span></div>
+
+      <div class="ig-forgot-wrap">
+        <a href="#" id="forgotPasswordLink" class="ig-forgot">Forgot password?</a>
       </div>
-      <button type="button" class="btn btn-primary w-100 py-2" id="sendResetBtn">Send reset link</button>
-      <p class="auth-switch mt-3"><a href="#" id="backToLoginLink">Back to sign in</a></p>
     </div>
 
-    <!-- Register panel -->
-    <div id="registerPanel" style="display:none">
+    <div id="signupPromptCard" class="ig-card ig-card-sm">
+      Don't have an account? <a href="#" onclick="showTab('register'); return false;" class="ig-link">Sign up</a>
+    </div>
+
+    <!-- Reset password card -->
+    <div id="resetCard" class="ig-card" style="display:none">
+      <div class="ig-card-logo">🔑</div>
+      <p class="ig-card-tagline">Enter your email and we'll send a reset link.</p>
+      <p id="resetMessage" class="auth-success" style="display:none"></p>
+      <p id="resetError"   class="auth-error"   style="display:none"></p>
+      <input type="email" id="resetEmail" class="ig-input" placeholder="Email" autocomplete="email">
+      <button type="button" class="ig-btn" id="sendResetBtn">Send reset link</button>
+      <div class="ig-forgot-wrap" style="margin-top:16px">
+        <a href="#" id="backToLoginLink" class="ig-forgot">Back to sign in</a>
+      </div>
+    </div>
+
+    <!-- Register card -->
+    <div id="registerCard" class="ig-card" style="display:none">
+      <div class="ig-card-logo">🐾 Fur Nest</div>
+      <p class="ig-card-tagline">Join the pet lover community</p>
+
       <form id="registerForm">
         <p id="registerError" class="auth-error" style="display:none"></p>
-        <div class="mb-3">
-          <label class="form-label">Your name</label>
-          <input type="text" id="regName" class="form-control" required autocomplete="name">
+        <input type="text"     id="regName"      class="ig-input" placeholder="Full name"        required autocomplete="name">
+        <input type="email"    id="regEmail"     class="ig-input" placeholder="Email"             required autocomplete="email">
+        <div class="ig-input-pw">
+          <input type="password" id="regPassword"  class="ig-input" placeholder="Password"         required autocomplete="new-password" minlength="6">
+          <button type="button" class="pw-toggle" data-target="regPassword" aria-label="Show password">👁</button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" id="regEmail" class="form-control" required autocomplete="email">
+        <div class="ig-input-pw">
+          <input type="password" id="regPassword2" class="ig-input" placeholder="Confirm password"  required autocomplete="new-password">
+          <button type="button" class="pw-toggle" data-target="regPassword2" aria-label="Show password">👁</button>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <div class="pw-wrap">
-            <input type="password" id="regPassword" class="form-control" required autocomplete="new-password" minlength="6">
-            <button type="button" class="pw-toggle" data-target="regPassword" aria-label="Show password">👁</button>
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Confirm password</label>
-          <div class="pw-wrap">
-            <input type="password" id="regPassword2" class="form-control" required autocomplete="new-password">
-            <button type="button" class="pw-toggle" data-target="regPassword2" aria-label="Show password">👁</button>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
+        <button type="submit" class="ig-btn">Create account</button>
       </form>
-      <p class="auth-switch">Already have an account? <a href="#login" onclick="showTab('login')">Sign in</a></p>
     </div>
+
+    <div id="signinPromptCard" class="ig-card ig-card-sm" style="display:none">
+      Have an account? <a href="#" onclick="showTab('login'); return false;" class="ig-link">Sign in</a>
+    </div>
+
   </div>
 </div>
 
-
-
 <script type="module" src="js/login.js"></script>
 <script>
+  function showTab(tab) {
+    document.getElementById('loginCard').style.display        = tab === 'login'    ? '' : 'none';
+    document.getElementById('signupPromptCard').style.display = tab === 'login'    ? '' : 'none';
+    document.getElementById('registerCard').style.display     = tab === 'register' ? '' : 'none';
+    document.getElementById('signinPromptCard').style.display = tab === 'register' ? '' : 'none';
+    document.getElementById('resetCard').style.display        = tab === 'reset'    ? '' : 'none';
+  }
+
   document.querySelectorAll('.pw-toggle').forEach(btn => {
     btn.addEventListener('click', () => {
       const input = document.getElementById(btn.dataset.target);
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
+      const show  = input.type === 'password';
+      input.type  = show ? 'text' : 'password';
       btn.textContent = show ? '🙈' : '👁';
     });
   });

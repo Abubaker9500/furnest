@@ -5,9 +5,6 @@ if (Auth.isLoggedIn()) { window.location.href = 'index.html'; }
 
 if (window.location.hash === '#register') showTab('register');
 
-document.getElementById('tab-login').addEventListener('click', () => showTab('login'));
-document.getElementById('tab-register').addEventListener('click', () => showTab('register'));
-
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]');
@@ -58,9 +55,9 @@ document.getElementById('backToLoginLink')?.addEventListener('click', e => {
 });
 
 document.getElementById('sendResetBtn')?.addEventListener('click', async () => {
-  const email = document.getElementById('resetEmail').value.trim();
-  const errorEl = document.getElementById('resetError');
-  const msgEl = document.getElementById('resetMessage');
+  const email    = document.getElementById('resetEmail').value.trim();
+  const errorEl  = document.getElementById('resetError');
+  const msgEl    = document.getElementById('resetMessage');
   if (!email) { showError('resetError', 'Please enter your email address.'); return; }
   const btn = document.getElementById('sendResetBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
@@ -77,12 +74,13 @@ document.getElementById('sendResetBtn')?.addEventListener('click', async () => {
 });
 
 function showTab(tab) {
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-  document.getElementById('loginPanel').style.display    = tab === 'login'    ? '' : 'none';
-  document.getElementById('registerPanel').style.display = tab === 'register' ? '' : 'none';
-  document.getElementById('resetPanel').style.display    = tab === 'reset'    ? '' : 'none';
+  document.getElementById('loginCard').style.display        = tab === 'login'    ? '' : 'none';
+  document.getElementById('signupPromptCard').style.display = tab === 'login'    ? '' : 'none';
+  document.getElementById('registerCard').style.display     = tab === 'register' ? '' : 'none';
+  document.getElementById('signinPromptCard').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('resetCard').style.display        = tab === 'reset'    ? '' : 'none';
 }
+
 function showError(id, msg) {
   const el = document.getElementById(id);
   if (el) { el.textContent = msg; el.style.display = ''; }

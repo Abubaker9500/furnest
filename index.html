@@ -52,6 +52,14 @@
 
   <aside class="feed-sidebar">
     <div class="sidebar-card">
+      <h3 class="sidebar-title">Search people</h3>
+      <div class="sidebar-search-wrap">
+        <span class="sidebar-search-icon">🔍</span>
+        <input type="text" id="userSearchInput" class="sidebar-search" placeholder="Search by name…" autocomplete="off">
+      </div>
+      <div id="userSearchResults" class="search-results" style="display:none"></div>
+    </div>
+    <div class="sidebar-card">
       <h3 class="sidebar-title">People to follow</h3>
       <div id="suggestedUsers"><p class="pp-empty">Loading…</p></div>
     </div>
@@ -316,6 +324,39 @@ async function loadSuggestions() {
     });
   } catch { container.innerHTML = '<p class="pp-empty">Could not load.</p>'; }
 }
+
+// ── User search ───────────────────────────────────────────────────────────────
+let cachedUsers = null;
+async function getAllUsers() {
+  if (cachedUsers) return cachedUsers;
+  const snap = await getDocs(collection(db, 'users'));
+  cachedUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return cachedUsers;
+}
+
+let searchTimer = null;
+document.getElementById('userSearchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim().toLowerCase();
+  const resultsEl = document.getElementById('userSearchResults');
+  if (!q) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; return; }
+  searchTimer = setTimeout(async () => {
+    const users = await getAllUsers();
+    const matches = users
+      .filter(u => u.id !== user?.id && (u.name || '').toLowerCase().includes(q))
+      .slice(0, 6);
+    if (!matches.length) {
+      resultsEl.innerHTML = '<p class="search-no-results">No users found.</p>';
+    } else {
+      resultsEl.innerHTML = matches.map(u => `
+        <a href="profile.html?id=${u.id}" class="search-result-item">
+          <img src="${(u.avatar||'').startsWith('http') ? u.avatar : 'https://placehold.co/34x34?text=🐾'}" class="search-result-avatar" alt="${escapeHtml(u.name)}">
+          <span class="search-result-name">${escapeHtml(u.name)}</span>
+        </a>`).join('');
+    }
+    resultsEl.style.display = '';
+  }, 280);
+});
 
 loadFeed();
 loadSuggestions();
