@@ -3,6 +3,10 @@ import { Auth } from './auth.js';
 import { MsgDB } from './messaging.js';
 import { showConfirm } from './confirm.js';
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 const user = await Auth.init();
 if (!user) { window.location.href = 'login.html'; }
 
@@ -18,11 +22,11 @@ if (!pet) {
   const isOwner = user && user.id === pet.ownerId;
   const owner = pet.ownerId ? await DB.getUserById(pet.ownerId) : null;
 
-  document.title = `${pet.name} — Fur Nest`;
+  document.title = `${escapeHtml(pet.name)} — Fur Nest`;
 
   const badgeMap = {
     adopt: `<span class="detail-badge badge-adopt">For Adoption</span>`,
-    sell:  `<span class="detail-badge badge-sell">${pet.price ? '$' + pet.price : 'For Sale'}</span>`,
+    sell:  `<span class="detail-badge badge-sell">${pet.price ? '$' + escapeHtml(pet.price) : 'For Sale'}</span>`,
     free:  `<span class="detail-badge badge-free">Free to Good Home</span>`
   };
   const statusMap = {
@@ -32,10 +36,12 @@ if (!pet) {
   };
 
   const healthTags = pet.health || (pet.vaccinated ? ['Vaccinated'] : []);
+  const petTypeDisplay = pet.type ? escapeHtml(pet.type.charAt(0).toUpperCase() + pet.type.slice(1)) : '';
+  const petStatusDisplay = pet.status ? escapeHtml(pet.status.charAt(0).toUpperCase() + pet.status.slice(1)) : 'Available';
 
   document.getElementById('detailsRoot').innerHTML = `
     <div class="detail-hero">
-      <img src="${pet.image || 'https://placehold.co/800x500?text=No+Photo'}" alt="${pet.name}" class="detail-img">
+      <img src="${escapeHtml(pet.image || 'https://placehold.co/800x500?text=No+Photo')}" alt="${escapeHtml(pet.name)}" class="detail-img">
       <div class="detail-overlay">
         <div class="detail-badges">
           ${badgeMap[pet.listingType] || ''}
@@ -47,8 +53,8 @@ if (!pet) {
       <div class="detail-main">
         <div class="detail-header">
           <div>
-            <h1 class="detail-name">${pet.name}</h1>
-            <p class="detail-breed">${pet.breed || ''} ${pet.type ? '· ' + pet.type.charAt(0).toUpperCase() + pet.type.slice(1) : ''}</p>
+            <h1 class="detail-name">${escapeHtml(pet.name)}</h1>
+            <p class="detail-breed">${escapeHtml(pet.breed || '')} ${petTypeDisplay ? '· ' + petTypeDisplay : ''}</p>
           </div>
           ${isOwner ? `
           <div class="owner-actions">
@@ -57,15 +63,15 @@ if (!pet) {
           </div>` : ''}
         </div>
         <div class="detail-stats">
-          <div class="stat-box"><span class="stat-label">Age</span><span class="stat-value">${pet.age || '—'}</span></div>
-          <div class="stat-box"><span class="stat-label">Gender</span><span class="stat-value">${pet.gender || '—'}</span></div>
-          <div class="stat-box"><span class="stat-label">Location</span><span class="stat-value">${pet.location || '—'}</span></div>
-          <div class="stat-box"><span class="stat-label">Status</span><span class="stat-value">${pet.status ? pet.status.charAt(0).toUpperCase() + pet.status.slice(1) : 'Available'}</span></div>
+          <div class="stat-box"><span class="stat-label">Age</span><span class="stat-value">${escapeHtml(pet.age) || '—'}</span></div>
+          <div class="stat-box"><span class="stat-label">Gender</span><span class="stat-value">${escapeHtml(pet.gender) || '—'}</span></div>
+          <div class="stat-box"><span class="stat-label">Location</span><span class="stat-value">${escapeHtml(pet.location) || '—'}</span></div>
+          <div class="stat-box"><span class="stat-label">Status</span><span class="stat-value">${petStatusDisplay}</span></div>
         </div>
         ${healthTags.length ? `
         <div class="detail-section">
           <h3>Health &amp; traits</h3>
-          <div class="health-tags">${healthTags.map(t => `<span class="health-tag">${t}</span>`).join('')}</div>
+          <div class="health-tags">${healthTags.map(t => `<span class="health-tag">${escapeHtml(t)}</span>`).join('')}</div>
         </div>` : ''}
         ${isOwner && pet.status === 'available' ? `
         <div class="detail-section">
@@ -80,15 +86,15 @@ if (!pet) {
         <div class="contact-card">
           ${owner ? `
           <div class="owner-info">
-            <img src="${owner.avatar}" class="owner-avatar" alt="${owner.name}">
+            <img src="${escapeHtml(owner.avatar)}" class="owner-avatar" alt="${escapeHtml(owner.name)}">
             <div>
-              <p class="owner-name">${owner.name}</p>
+              <p class="owner-name">${escapeHtml(owner.name)}</p>
               <p class="owner-since">Member since ${new Date(owner.createdAt).getFullYear()}</p>
             </div>
           </div>` : `<p class="owner-name">Listed on Fur Nest</p>`}
           ${pet.status === 'available'
             ? (!isOwner && owner
-                ? `<div class="contact-actions"><button class="btn-contact" id="messageOwnerBtn">💬 Message about ${pet.name}</button></div>`
+                ? `<div class="contact-actions"><button class="btn-contact" id="messageOwnerBtn">💬 Message about ${escapeHtml(pet.name)}</button></div>`
                 : isOwner ? `<p class="own-listing-note">This is your listing</p>` : '')
             : `<p class="not-available">This pet is no longer available</p>`}
         </div>

@@ -3,6 +3,10 @@ import { Auth } from './auth.js';
 
 await Auth.init();
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function cleanImageUrl(url) {
   return url ? url.replace('http://', 'https://') : '';
 }
@@ -83,19 +87,19 @@ function renderPets() {
       <div class="col-sm-6 col-lg-4">
         <div class="pet-card" onclick="window.location.href='pet-details.html?id=${pet.id}'">
           <div class="pet-card-img-wrap">
-            <img src="${cleanImageUrl(pet.image) || 'https://placehold.co/400x300?text=No+Photo'}" alt="${pet.name}" loading="lazy">
+            <img src="${cleanImageUrl(pet.image) || 'https://placehold.co/400x300?text=No+Photo'}" alt="${escapeHtml(pet.name)}" loading="lazy">
             <span class="listing-badge ${badge.cls}">${badge.label}</span>
             ${getStatusBadge(pet.status)}
           </div>
           <div class="pet-card-body">
             <div class="pet-card-top">
-              <h3>${pet.name}</h3>
+              <h3>${escapeHtml(pet.name)}</h3>
               <span class="pet-type-icon">${getPetTypeIcon(pet.type)}</span>
             </div>
-            <p class="pet-breed">${pet.breed || ''}</p>
+            <p class="pet-breed">${escapeHtml(pet.breed || '')}</p>
             <div class="pet-card-meta">
-              <span>📍 ${pet.location || 'Unknown'}</span>
-              <span>${pet.age || ''}</span>
+              <span>📍 ${escapeHtml(pet.location || 'Unknown')}</span>
+              <span>${escapeHtml(pet.age || '')}</span>
             </div>
           </div>
         </div>
@@ -128,19 +132,19 @@ function renderItems() {
       <div class="col-sm-6 col-lg-4">
         <div class="pet-card" onclick="window.location.href='item-details.html?id=${item.id}'">
           <div class="pet-card-img-wrap">
-            <img src="${cleanImageUrl(item.image) || 'https://placehold.co/400x300?text=No+Photo'}" alt="${item.title}" loading="lazy">
+            <img src="${cleanImageUrl(item.image) || 'https://placehold.co/400x300?text=No+Photo'}" alt="${escapeHtml(item.title)}" loading="lazy">
             <span class="listing-badge ${badge.cls}">${badge.label}</span>
             ${item.status === 'sold' ? '<span class="status-badge status-sold">Sold</span>' : ''}
           </div>
           <div class="pet-card-body">
             <div class="pet-card-top">
-              <h3>${item.title}</h3>
+              <h3>${escapeHtml(item.title)}</h3>
               <span class="pet-type-icon">${cat.icon}</span>
             </div>
-            <p class="pet-breed">${cat.label}</p>
+            <p class="pet-breed">${escapeHtml(cat.label)}</p>
             <div class="pet-card-meta">
-              <span>📍 ${item.location || 'Unknown'}</span>
-              ${condition ? `<span class="item-condition">${condition}</span>` : ''}
+              <span>📍 ${escapeHtml(item.location || 'Unknown')}</span>
+              ${condition ? `<span class="item-condition">${escapeHtml(condition)}</span>` : ''}
             </div>
           </div>
         </div>

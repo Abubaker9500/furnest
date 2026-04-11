@@ -7,6 +7,10 @@ import { db } from './firebase.js';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { showConfirm } from './confirm.js';
 
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 const currentUser = await Auth.init();
 if (!currentUser) { window.location.href = 'login.html'; }
 
@@ -59,7 +63,7 @@ async function renderProfile(user, isOwn) {
   document.getElementById('profileRoot').innerHTML = `
     <div class="profile-hero">
       <div class="profile-avatar-wrap">
-        <img src="${user.avatar}" alt="${user.name}" class="profile-avatar">
+        <img src="${escapeHtml(user.avatar)}" alt="${escapeHtml(user.name)}" class="profile-avatar">
         ${isOwn ? `
         <div class="avatar-change-menu" id="avatarChangeMenu" style="display:none">
           <label class="avatar-option-btn" id="uploadAvatarLabel">
@@ -72,9 +76,9 @@ async function renderProfile(user, isOwn) {
         <p id="avatarUploadStatus" class="upload-status mt-1" style="display:none;position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:0.72rem"></p>` : ''}
       </div>
       <div class="profile-info">
-        <h1 class="profile-name">${user.name}</h1>
-        <p class="profile-meta">${user.location ? `📍 ${user.location} · ` : ''}Member since ${new Date(user.createdAt).getFullYear()}</p>
-        ${user.bio ? `<p class="profile-bio">${user.bio}</p>` : (isOwn ? `<p class="profile-bio placeholder-bio">Add a bio…</p>` : '')}
+        <h1 class="profile-name">${escapeHtml(user.name)}</h1>
+        <p class="profile-meta">${user.location ? `📍 ${escapeHtml(user.location)} · ` : ''}Member since ${new Date(user.createdAt).getFullYear()}</p>
+        ${user.bio ? `<p class="profile-bio">${escapeHtml(user.bio)}</p>` : (isOwn ? `<p class="profile-bio placeholder-bio">Add a bio…</p>` : '')}
       </div>
       <div class="profile-stats">
         <div class="pstat pstat-clickable" id="openFollowing"><span class="pstat-num">${followingCount}</span><span class="pstat-label">Following</span></div>
@@ -109,7 +113,7 @@ async function renderProfile(user, isOwn) {
     </div>
 
     <div class="profile-body">
-      <h2 class="section-title">${isOwn ? 'My pet listings' : `${user.name.split(' ')[0]}'s pet listings`}</h2>
+      <h2 class="section-title">${isOwn ? 'My pet listings' : `${escapeHtml(user.name.split(' ')[0])}'s pet listings`}</h2>
       ${pets.length === 0 ? `
         <div class="no-pets"><p>No pet listings yet.</p>${isOwn ? `<a href="add-pet.html" class="btn-add-pet">List a pet</a>` : ''}</div>
       ` : `
@@ -117,16 +121,16 @@ async function renderProfile(user, isOwn) {
           ${pets.map(pet => {
             const bKey = pet.listingType || 'adopt';
             const [label, cls] = badgeMap[bKey] || badgeMap.adopt;
-            const displayLabel = bKey === 'sell' && pet.price ? '$'+pet.price : label;
+            const displayLabel = bKey === 'sell' && pet.price ? '$'+escapeHtml(pet.price) : label;
             return `
             <div class="profile-pet-card">
               <a href="pet-details.html?id=${pet.id}">
                 <div class="ppc-img-wrap">
-                  <img src="${pet.image || 'https://placehold.co/300x200?text=No+Photo'}" alt="${pet.name}" loading="lazy">
+                  <img src="${escapeHtml(pet.image || 'https://placehold.co/300x200?text=No+Photo')}" alt="${escapeHtml(pet.name)}" loading="lazy">
                   <span class="listing-badge ${cls}">${displayLabel}</span>
-                  ${pet.status !== 'available' ? `<span class="status-overlay">${pet.status}</span>` : ''}
+                  ${pet.status !== 'available' ? `<span class="status-overlay">${escapeHtml(pet.status)}</span>` : ''}
                 </div>
-                <div class="ppc-body"><h3>${pet.name}</h3><p>${pet.breed || ''} · ${pet.age || ''}</p></div>
+                <div class="ppc-body"><h3>${escapeHtml(pet.name)}</h3><p>${escapeHtml(pet.breed || '')} · ${escapeHtml(pet.age || '')}</p></div>
               </a>
               ${isOwn ? `
               <div class="ppc-actions">
@@ -141,7 +145,7 @@ async function renderProfile(user, isOwn) {
     </div>
 
     <div class="profile-body">
-      <h2 class="section-title">${isOwn ? 'My item listings' : `${user.name.split(' ')[0]}'s item listings`}</h2>
+      <h2 class="section-title">${isOwn ? 'My item listings' : `${escapeHtml(user.name.split(' ')[0])}'s item listings`}</h2>
       ${items.length === 0 ? `
         <div class="no-pets"><p>No item listings yet.</p>${isOwn ? `<a href="add-item.html" class="btn-add-pet">List an item</a>` : ''}</div>
       ` : `
@@ -149,16 +153,16 @@ async function renderProfile(user, isOwn) {
           ${items.map(item => {
             const bKey = item.listingType === 'free' ? 'free' : 'sell';
             const [label, cls] = badgeMap[bKey] || badgeMap.sell;
-            const displayLabel = bKey === 'sell' && item.price ? '$'+item.price : label;
+            const displayLabel = bKey === 'sell' && item.price ? '$'+escapeHtml(item.price) : label;
             return `
             <div class="profile-pet-card">
               <a href="item-details.html?id=${item.id}">
                 <div class="ppc-img-wrap">
-                  <img src="${item.image || 'https://placehold.co/300x200?text=No+Photo'}" alt="${item.title}" loading="lazy">
+                  <img src="${escapeHtml(item.image || 'https://placehold.co/300x200?text=No+Photo')}" alt="${escapeHtml(item.title)}" loading="lazy">
                   <span class="listing-badge ${cls}">${displayLabel}</span>
                   ${item.status === 'sold' ? `<span class="status-overlay">sold</span>` : ''}
                 </div>
-                <div class="ppc-body"><h3>${item.title}</h3><p>${item.category || ''} · ${item.condition || ''}</p></div>
+                <div class="ppc-body"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.category || '')} · ${escapeHtml(item.condition || '')}</p></div>
               </a>
               ${isOwn ? `
               <div class="ppc-actions">
@@ -179,10 +183,10 @@ async function renderProfile(user, isOwn) {
       <div class="modal-box">
         <h2>Edit profile</h2>
         <form id="editProfileForm">
-          <label>Name</label><input type="text" id="editName" value="${user.name}" required>
-          <label>Location</label><input type="text" id="editLocation" value="${user.location || ''}">
-          <label>Bio</label><textarea id="editBio" rows="3">${user.bio || ''}</textarea>
-          <label>Phone</label><input type="tel" id="editPhone" value="${user.phone || ''}">
+          <label>Name</label><input type="text" id="editName" value="${escapeHtml(user.name)}" required>
+          <label>Location</label><input type="text" id="editLocation" value="${escapeHtml(user.location || '')}">
+          <label>Bio</label><textarea id="editBio" rows="3">${escapeHtml(user.bio || '')}</textarea>
+          <label>Phone</label><input type="tel" id="editPhone" value="${escapeHtml(user.phone || '')}">
           <div class="modal-actions">
             <button type="submit" class="btn-save">Save</button>
             <button type="button" class="btn-cancel" id="cancelEditBtn">Cancel</button>
@@ -222,12 +226,12 @@ async function renderProfile(user, isOwn) {
           <div class="profile-pet-card">
             <a href="pet-profile.html?id=${p.id}">
               <div class="ppc-img-wrap">
-                <img src="${p.avatar || 'https://placehold.co/300x200?text=🐾'}" alt="${p.name}" loading="lazy">
+                <img src="${escapeHtml(p.avatar || 'https://placehold.co/300x200?text=🐾')}" alt="${escapeHtml(p.name)}" loading="lazy">
                 ${p.visibility === 'private' ? '<span class="status-overlay" style="font-size:.75rem">Private</span>' : ''}
               </div>
               <div class="ppc-body">
-                <h3>${p.name} ${typeEmoji[p.type]||'🐾'}</h3>
-                <p>${p.breed || p.type || ''}</p>
+                <h3>${escapeHtml(p.name)} ${typeEmoji[p.type]||'🐾'}</h3>
+                <p>${escapeHtml(p.breed || p.type || '')}</p>
               </div>
             </a>
             ${isOwn ? `
@@ -284,10 +288,10 @@ async function renderProfile(user, isOwn) {
 
     list.innerHTML = valid.map(u => `
       <a href="profile.html?id=${u.id}" class="users-modal-item">
-        <img src="${u.avatar || 'https://placehold.co/44x44?text=🐾'}" class="users-modal-avatar" alt="${u.name}">
+        <img src="${escapeHtml(u.avatar || 'https://placehold.co/44x44?text=🐾')}" class="users-modal-avatar" alt="${escapeHtml(u.name)}">
         <div class="users-modal-info">
-          <span class="users-modal-name">${u.name}</span>
-          ${u.location ? `<span class="users-modal-meta">📍 ${u.location}</span>` : ''}
+          <span class="users-modal-name">${escapeHtml(u.name)}</span>
+          ${u.location ? `<span class="users-modal-meta">📍 ${escapeHtml(u.location)}</span>` : ''}
         </div>
       </a>`).join('');
   }
