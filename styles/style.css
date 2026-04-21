@@ -1088,3 +1088,32 @@ body {
   display: block; margin: 8px auto 0;
   background: var(--purple-light);
 }
+/* ---- MOBILE NAV FIX ---- */
+@media (max-width: 600px) {
+  .fn-nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 16px;
+    gap: 8px;
+  }
+  .fn-nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+  .nav-auth {
+    margin-left: auto;
+  }
+  .nav-username {
+    display: none;
+  }
+  .feed-layout {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+  .feed-sidebar {
+    display: none;
+  }
+}
