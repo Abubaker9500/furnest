@@ -18,7 +18,7 @@
   <div id="nav-auth" class="nav-auth"></div>
 </nav>
 
-<div class="feed-layout" id="feedLayout" style="display:none">
+<div class="feed-layout" id="feedLayout">
   <div class="feed-main">
 
     <div id="createPostBox" class="create-post-box" style="display:none">
@@ -97,16 +97,20 @@ function escapeHtml(str) {
 }
 
 const user = await Auth.init();
-if (!user) { window.location.href = 'login.html'; return; }
-document.getElementById('feedLayout').style.display = '';
 
-let currentTab = 'following';
+let currentTab = 'discover';
 let postPhotoUrl = '';
 
 if (user) {
+  currentTab = 'following';
   document.getElementById('createPostBox').style.display = '';
   document.getElementById('createPostAvatar').src = user.avatar;
   document.getElementById('feedTabs').style.display = '';
+} else {
+  const banner = document.createElement('div');
+  banner.className = 'signin-banner';
+  banner.innerHTML = `<p>Sign in to see posts from people you follow.</p><a href="login.html" class="btn-signin-banner">Sign in</a>`;
+  document.getElementById('feedContent').insertAdjacentElement('beforebegin', banner);
 }
 
 document.getElementById('openPostForm')?.addEventListener('click', () => {
@@ -395,10 +399,8 @@ document.getElementById('userSearchInput').addEventListener('input', e => {
   }, 280);
 });
 
-if (user) {
-  loadFeed();
-  loadSuggestions();
-}
+loadFeed();
+loadSuggestions();
 </script>
 </body>
 </html>
