@@ -18,7 +18,7 @@
   <div id="nav-auth" class="nav-auth"></div>
 </nav>
 
-<div class="feed-layout">
+<div class="feed-layout" id="feedLayout" style="display:none">
   <div class="feed-main">
 
     <div id="createPostBox" class="create-post-box" style="display:none">
@@ -97,7 +97,8 @@ function escapeHtml(str) {
 }
 
 const user = await Auth.init();
-if (!user) { window.location.href = 'login.html'; }
+if (!user) { window.location.href = 'login.html'; return; }
+document.getElementById('feedLayout').style.display = '';
 
 let currentTab = 'following';
 let postPhotoUrl = '';
@@ -394,8 +395,10 @@ document.getElementById('userSearchInput').addEventListener('input', e => {
   }, 280);
 });
 
-loadFeed();
-loadSuggestions();
+if (user) {
+  loadFeed();
+  loadSuggestions();
+}
 </script>
 </body>
 </html>
