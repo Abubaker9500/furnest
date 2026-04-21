@@ -793,15 +793,31 @@ body {
 }
 .fn-nav-link:hover { background: var(--purple-light); color: var(--purple); }
 .fn-nav-link.active { background: var(--purple-light); color: var(--purple); }
-/* Mobile nav: hide username and shrink spacing so nav doesn't overflow */
+/* Mobile nav: two-row wrap — logo+auth on top, links below */
 @media (max-width: 600px) {
-  .fn-nav { padding: 0 12px; }
-  .fn-logo { font-size: 1rem; }
-  .fn-nav-links { gap: 0; }
-  .fn-nav-link { padding: 6px 10px; font-size: 0.82rem; }
+  .fn-nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  .fn-logo { font-size: 1rem; order: 1; flex-shrink: 0; }
+  #nav-auth { order: 2; margin-left: auto; }
+  .fn-nav-links {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: center;
+    gap: 0;
+    padding-bottom: 4px;
+  }
+  .fn-nav-link { padding: 5px 10px; font-size: 0.82rem; }
   .nav-username { display: none; }
   .btn-logout { padding: 4px 10px; font-size: 0.78rem; }
   .nav-bell { margin: 0 2px; }
+  /* Hero */
+  .hero { padding: 32px 16px 28px; }
+  /* Feed edge padding */
+  .feed-layout { padding: 12px 8px 60px; gap: 12px; }
 }
 
 /* ---- FEED LAYOUT ---- */
