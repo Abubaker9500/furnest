@@ -838,12 +838,12 @@ body {
   }
   .fn-nav-link { padding: 5px 10px; font-size: 0.82rem; }
   .nav-username { display: none; }
-  .btn-logout { padding: 4px 10px; font-size: 0.78rem; }
-  .nav-bell { margin: 0 2px; }
+  .btn-logout { padding: 4px 8px; font-size: 0.76rem; }
+  .nav-bell { margin: 0 1px; padding: 4px 4px; }
   /* Hero */
   .hero { padding: 32px 16px 28px; }
-  /* Feed edge padding */
-  .feed-layout { padding: 12px 8px 60px; gap: 12px; }
+  /* iOS: prevent input zoom (inputs need font-size ≥16px on iOS) */
+  input, textarea, select { font-size: 16px !important; }
 }
 
 /* ---- FEED LAYOUT ---- */
@@ -862,8 +862,8 @@ body {
   .feed-sidebar { grid-column: 2; }
 }
 @media (max-width: 640px) {
-  .feed-layout { grid-template-columns: 1fr; }
-  .feed-main    { grid-column: 1; }
+  .feed-layout { grid-template-columns: 1fr; padding: 12px 10px 60px; gap: 12px; }
+  .feed-main    { grid-column: 1; min-width: 0; }
   .feed-sidebar { display: none; }
 }
 
@@ -918,10 +918,10 @@ body {
 .post-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .post-owner-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-.post-owner-name { display: block; font-weight: 700; font-size: 0.95rem; }
+.post-owner-name { display: block; font-weight: 700; font-size: 0.95rem; overflow-wrap: break-word; }
 .post-date { font-size: 0.78rem; color: var(--text-muted); }
-.post-text { font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; white-space: pre-wrap; }
-.post-photo { width: 100%; border-radius: 10px; object-fit: cover; max-height: 500px; cursor: zoom-in; display: block; margin-bottom: 10px; }
+.post-text { font-size: 0.95rem; line-height: 1.6; margin-bottom: 10px; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
+.post-photo { width: 100%; max-width: 100%; border-radius: 10px; object-fit: cover; max-height: 500px; cursor: zoom-in; display: block; margin-bottom: 10px; }
 .post-actions { display: flex; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 10px; }
 .post-like-btn {
   background: none; border: none; cursor: pointer; font-size: 0.9rem;
